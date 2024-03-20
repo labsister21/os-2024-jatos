@@ -34,8 +34,8 @@ struct SegmentDescriptor {
     uint8_t base_mid;
     uint8_t type_bit   : 4;
     uint8_t non_system : 1;
-    uint8_t dpl : 3; 
-    uint8_t p: 2;
+    uint8_t dpl : 2; 
+    uint8_t p: 1;
     uint8_t seg_limit :4;
     uint8_t avl : 1;
     uint8_t l : 1; 
