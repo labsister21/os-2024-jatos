@@ -26,13 +26,16 @@ void kernel_setup(void)
     {
         char c;
         get_keyboard_buffer(&c);
+
         /* backspace */
         if (c == 0xE){
-            framebuffer_write(row, col-1, 0x0,0x7,0x0);
+            framebuffer_write(row, col, 0x0, 0x7, 0x0);
             col--;
+            framebuffer_set_cursor(0, col);
         }
         else if(c){
-            framebuffer_write(0, col++, c, 0xF, 0);
+            framebuffer_write(0, ++col, c, 0xF, 0);
+            framebuffer_set_cursor(0, col);
         }
     }
 }
