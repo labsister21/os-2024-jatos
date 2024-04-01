@@ -65,6 +65,26 @@ const char keyboard_scancode_capslock_to_ascii_map[256] = {
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
 };
 
+const char keyboard_scancode_shift_capslock_to_ascii_map[256] = {
+      0, 0x1B, '!', '@', '#', '$', '%', '^',  '&', '*', '(',  ')',  '_', '+', '\b', '\t',
+    'q',  'w', 'e', 'r', 't', 'y', 'u', 'i',  'o', 'p', '{',  '}', '\n',   0,  'a',  's',
+    'd',  'f', 'g', 'h', 'j', 'k', 'l', ':', '\"', '`',   0, '\\',  'z', 'x',  'c',  'v',
+    'b',  'n', 'm', '<', '>', '?',   0, '*',    0, ' ',   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0, '-',    0,    0,   0,  '+',    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+};
+
 void keyboard_isr(void) {
     uint8_t scancode = in(KEYBOARD_DATA_PORT);
     static bool isShift = false;
@@ -103,11 +123,13 @@ void keyboard_isr(void) {
             keyboard_state.keyboard_buffer = scancode;
         } else {
             // Memasukkan karakter sesuai dengan map scancode to ASCII ke dalam buffer
-            if ((isShift) && (!isCapsLock)){ // Jika shift
+            if ((isShift) && (!isCapsLock)){ // Jika shift tetapi bukan capslock
                 keyboard_state.keyboard_buffer = keyboard_scancode_shift_to_ascii_map[scancode];
-            } else if ((!isShift) && (isCapsLock)){
+            } else if ((!isShift) && (isCapsLock)){ // Jika bukan shift tetapi capslock
                 keyboard_state.keyboard_buffer = keyboard_scancode_capslock_to_ascii_map[scancode];
-            } else { // Jika bukan shift dan bukan capslock atau shift dan capslock
+            } else if ((isShift) && (isCapsLock)){ // Jika shift dan capslock
+                keyboard_state.keyboard_buffer = keyboard_scancode_shift_capslock_to_ascii_map[scancode];
+            } else { // Jika bukan shift dan bukan capslock
                 keyboard_state.keyboard_buffer = keyboard_scancode_1_to_ascii_map[scancode];
             }
         }
