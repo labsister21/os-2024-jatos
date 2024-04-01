@@ -19,22 +19,33 @@ void kernel_setup(void)
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
 
-    int col = 0;
+    int col = -1;
     int row = 0;
     keyboard_state_activate();
+    framebuffer_write(0, 0, 0x0, 0x7, 0x0);
+
     while (true)
-    {
+    {   
+
         char c;
         get_keyboard_buffer(&c);
 
         /* backspace */
         if (c == 0xE){
-            framebuffer_write(row, col, 0x0, 0x7, 0x0);
-            col--;
-            framebuffer_set_cursor(0, col);
+            if (col > -1){
+                framebuffer_write(row, col, 0x0, 0x7, 0x0);
+                col--;
+                if (col == -1){
+                    framebuffer_set_cursor(0, 0);
+                } else {
+                    framebuffer_set_cursor(0, col);
+                }
+            }
         }
+        
         else if(c){
-            framebuffer_write(0, ++col, c, 0xF, 0);
+            col++;
+            framebuffer_write(0, col, c, 0xF, 0);
             framebuffer_set_cursor(0, col);
         }
     }
