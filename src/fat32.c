@@ -119,7 +119,10 @@ void initialize_filesystem_fat32(void){
  * @param cluster_number Cluster number to write
  * @param cluster_count  Cluster count to write, due limitation of write_blocks block_count 255 => max cluster_count = 63
  */
-void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count);
+void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count){
+    struct ClusterBuffer* cluster_buffer = ptr;
+    write_blocks(cluster_buffer, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
+}
 
 /**
  * Read cluster operation, wrapper for read_blocks().
@@ -130,8 +133,8 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
  * @param cluster_count  Cluster count to read, due limitation of read_blocks block_count 255 => max cluster_count = 63
  */
 void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
-    struct ClusterBuffer cluster_buffer;
-    read_blocks(&cluster_buffer, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
+    struct ClusterBuffer* cluster_buffer = ptr;
+    read_blocks(cluster_buffer, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
 }
 
 
