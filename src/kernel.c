@@ -28,6 +28,7 @@ void kernel_setup(void)
     {   
 
         char c;
+
         get_keyboard_buffer(&c);
 
         /* backspace */
@@ -42,8 +43,18 @@ void kernel_setup(void)
                 }
             }
         }
-        
-        else if(c){
+        else if (c == 0x4b){
+            if (col > 0){
+                col--;
+                framebuffer_set_cursor(row, col);
+            }
+        }
+        else if (c == 0x4d){
+            col++;
+            framebuffer_set_cursor(row, col);
+        }
+      
+        else if(c != 0){
             col++;
             framebuffer_write(0, col, c, 0xF, 0);
             framebuffer_set_cursor(0, col);
