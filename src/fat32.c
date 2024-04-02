@@ -79,14 +79,37 @@ bool is_empty_storage(void){
  * and initialized root directory) into cluster number 1
  */
 void create_fat32(void){
-    create_fat32();
+    // inisiasi boot sector (ga boleh disentuh, reset)
+    uint8_t boot_sector[BLOCK_SIZE];
+    memset(boot_sector,0,BLOCK_SIZE);
+    memcpy(boot_sector,fs_signature,BLOCK_SIZE);
+    write_blocks(boot_sector, 0, 1);
+
+    // sector pertama
+    driver_state.fat_table.cluster_map[0] = CLUSTER_0_VALUE;
+    driver_state.fat_table.cluster_map[1] = CLUSTER_1_VALUE;
+    driver_state.fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
+    write_clusters(&driver_state.fat_table.cluster_map, 1, 1);
+
+    // sector kedua isinya root
+    struct FAT32DirectoryTable directory_table = {0};
+    init_directory_table(&directory_table,"root\0\0\0\0",2);
+    write_clusters(&directory_table, 2, 1);
 }
 
 /**
  * Initialize file system driver state, if is_empty_storage() then create_fat32()
  * Else, read and cache entire FileAllocationTable (located at cluster number 1) into driver state
  */
-void initialize_filesystem_fat32(void);
+void initialize_filesystem_fat32(void){
+    if (is_empty_storage()){
+        create_fat32();
+    } else {
+        // for (int i = 0; i < BLOCK_SIZE; i++){
+        //     read_cluster
+        // }
+    }
+}
 
 /**
  * Write cluster operation, wrapper for write_blocks().
