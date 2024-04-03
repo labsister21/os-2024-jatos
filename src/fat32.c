@@ -25,7 +25,7 @@ const uint8_t fs_signature[BLOCK_SIZE] = {
  * @return uint32_t Logical Block Address
  */
 uint32_t cluster_to_lba(uint32_t cluster){
-    return cluster*0x200;
+    return cluster * CLUSTER_MAP_SIZE;
 }
 
 /**
@@ -150,29 +150,27 @@ void read_clusters(void *ptr, uint32_t cluster_number, uint8_t cluster_count){
  * @return Error code: 0 success - 1 not a folder - 2 not found - -1 unknown
  */
 int8_t read_directory(struct FAT32DriverRequest request){
+    if (request.buffer_size != sizeof(driver_state.dir_table_buf)){
+        return -1;
+    }
 
-    // int idx = -1;
+    // loop cari idx nya
+    struct FAT32DirectoryTable *dir_table;
+    read_clusters(&dir_table, request.parent_cluster_number, 1);
 
-    // // loop cari idx nya
-    // for (/* loop */){
-    //     if (/* condition */){
-    //         idx = i;
-    //         break;
-    //     }
-    // }
+    for (int i = 0; i < (CLUSTER_SIZE / 32); i++){
+        if (dir_table->table[i].name == request.name){
+            if (dir_table->table[i].ext != '\0'){
+                return 1;
+            } else {
+                uint32_t clust_number = dir_table->table[i].cluster_low | (dir_table->table[i].cluster_high << 16);
+                read_clusters(request.buf, clust_number, 1);
+                return 0;
+            }
+        }
+    }
 
-    // if (idx == -1 /* idx not found */){
-    //     return 2;
-    // }
-    // else if (/* not a folder*/){
-    //     return 1;
-    // }
-    // else if (/* success condition */){
-    //     return 0;
-    // }
-    // else {
-    //     return -1;
-    // }
+    return 2;
 }
 
 
