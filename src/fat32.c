@@ -95,6 +95,10 @@ void create_fat32(void){
     struct FAT32DirectoryTable directory_table = {0};
     init_directory_table(&directory_table,"root\0\0\0\0",2);
     write_clusters(&directory_table, 2, 1);
+
+    for(int i = 3 ; i < CLUSTER_SIZE; i++){
+        driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
+    }
 }
 
 /**
@@ -180,7 +184,35 @@ int8_t read_directory(struct FAT32DriverRequest request){
  * @param request All attribute will be used for read, buffer_size will limit reading count
  * @return Error code: 0 success - 1 not a file - 2 not enough buffer - 3 not found - -1 unknown
  */
-int8_t read(struct FAT32DriverRequest request);
+int8_t read(struct FAT32DriverRequest request){
+    if (request.buffer_size > sizeof(driver_state.dir_table_buf)){
+        return 2;
+    }
+
+    struct FAT32DirectoryTable *dir_table;
+    read_clusters(&dir_table, request.parent_cluster_number, 1);
+
+    for (int i = 0; i < (CLUSTER_SIZE / 32); i++){
+        if (dir_table->table[i].name == request.name){
+            if (dir_table->table[i].filesize == 0){
+                return 1;
+            }
+            else{
+                uint32_t clust_number = dir_table->table[i].cluster_low | (dir_table->table[i].cluster_high << 16);
+                while(driver_state.fat_table.cluster_map[clust_number] != FAT32_FAT_END_OF_FILE){
+                    read_clusters(request.buf,clust_number,1);
+                    clust_number = driver_state.fat_table.cluster_map[clust_number];
+                    request.buf += CLUSTER_SIZE;
+                }
+
+            }
+        }
+    }
+
+
+    return 3;
+
+}
 
 /**
  * FAT32 write, write a file or folder to file system.
@@ -188,7 +220,64 @@ int8_t read(struct FAT32DriverRequest request);
  * @param request All attribute will be used for write, buffer_size == 0 then create a folder / directory
  * @return Error code: 0 success - 1 file/folder already exist - 2 invalid parent cluster - -1 unknown
  */
-int8_t write(struct FAT32DriverRequest request);
+int8_t write(struct FAT32DriverRequest request){
+ 
+    uint32_t reqSize = request.buffer_size;
+    uint32_t clusterNeed = reqSize / CLUSTER_SIZE;
+    uint32_t clustBefore = 0;
+    
+    for (int i = 3 ; i < (CLUSTER_SIZE); i++){
+        if(memcmp(request.name ,driver_state.dir_table_buf.table[i].name,8 ) == 0){
+            return 1;
+        }
+    }
+    
+
+    if(driver_state.fat_table.cluster_map[request.parent_cluster_number] == FAT32_FAT_EMPTY_ENTRY){
+        return 2;
+    }
+    
+
+    if(clusterNeed * CLUSTER_SIZE < reqSize){
+        clusterNeed++;
+    }
+
+    //WRITE FOLDER
+    if(request.buffer_size == 0){
+        for(int i = 3 ; i < CLUSTER_SIZE; i++){
+            if(driver_state.fat_table.cluster_map[i] == FAT32_FAT_EMPTY_ENTRY ){
+                write_clusters(request.buf,i,1);
+                driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
+            }
+        }
+    }
+
+
+    else{
+        //WRITE FILE
+        uint32_t written = 0;
+        while(written < clusterNeed){
+            for (int i = 3 ; i < (CLUSTER_SIZE); i++){
+
+                if(driver_state.fat_table.cluster_map[i] == FAT32_FAT_EMPTY_ENTRY ){
+                    write_clusters(request.buf+written * CLUSTER_SIZE,i,1);
+                    written++;
+
+                    if(written == 0 ){
+                        //DO Nothing
+                    }else {
+                        driver_state.fat_table.cluster_map[clustBefore] = i;
+                    }
+                    if (written == clusterNeed){
+                        driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
+                    }
+                    clustBefore = i;
+                }
+            }
+        }
+    }  
+    return 0;
+}
 
 
 /**
@@ -197,4 +286,6 @@ int8_t write(struct FAT32DriverRequest request);
  * @param request buf and buffer_size is unused
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
-int8_t delete(struct FAT32DriverRequest request);
+int8_t delete(struct FAT32DriverRequest request){
+
+}
