@@ -27,45 +27,45 @@ void kernel_setup(void)
     write_blocks(&b, 17, 1);
     while (true);
 
-    // int col = -1;
-    // int row = 0;
-    // keyboard_state_activate();
-    // framebuffer_write(0, 0, 0x0, 0x7, 0x0);
+    int col = -1;
+    int row = 0;
+    keyboard_state_activate();
+    framebuffer_write(0, 0, 0x0, 0x7, 0x0);
 
-    // while (true)
-    // {   
+    while (true)
+    {   
 
-    //     char c;
+        char c;
 
-    //     get_keyboard_buffer(&c);
+        get_keyboard_buffer(&c);
 
-    //     /* backspace */
-    //     if (c == 0xE){
-    //         if (col > -1){
-    //             framebuffer_write(row, col, 0x0, 0x7, 0x0);
-    //             col--;
-    //             if (col == -1){
-    //                 framebuffer_set_cursor(0, 0);
-    //             } else {
-    //                 framebuffer_set_cursor(0, col);
-    //             }
-    //         }
-    //     }
-    //     else if (c == 0x4b){
-    //         if (col > 0){
-    //             col--;
-    //             framebuffer_set_cursor(row, col);
-    //         }
-    //     }
-    //     else if (c == 0x4d){
-    //         col++;
-    //         framebuffer_set_cursor(row, col);
-    //     }
+        /* backspace */
+        if (c == 0xE){
+            if (col > -1){
+                framebuffer_write(row, col, 0x0, 0x7, 0x0);
+                col--;
+                if (col == -1){
+                    framebuffer_set_cursor(0, 0);
+                } else {
+                    framebuffer_set_cursor(0, col);
+                }
+            }
+        }
+        else if (c == 0x4b){
+            if (col > 0){
+                col--;
+                framebuffer_set_cursor(row, col);
+            }
+        }
+        else if (c == 0x4d){
+            col++;
+            framebuffer_set_cursor(row, col);
+        }
       
-    //     else if(c != 0){
-    //         col++;
-    //         framebuffer_write(0, col, c, 0xF, 0);
-    //         framebuffer_set_cursor(0, col);
-    //     }
-    // }
+        else if(c != 0){
+            col++;
+            framebuffer_write(0, col, c, 0xF, 0);
+            framebuffer_set_cursor(0, col);
+        }
+    }
 }
