@@ -287,5 +287,41 @@ int8_t write(struct FAT32DriverRequest request){
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
 int8_t delete(struct FAT32DriverRequest request){
-
+    struct FAT32DirectoryTable *dir_table;
+    uint16_t high, low, index = -1; 
+    read_clusters(&dir_table, request.parent_cluster_number, 1);
+    for (int i = 0; i < CLUSTER_SIZE;i++){
+        if (memcmp(request.name,dir_table->table[i].name,8) == 0){
+            high = dir_table->table[i].cluster_high;
+            low = dir_table->table[i].cluster_low;
+            index = i;
+            break;
+        }
+    }
+    if (index == -1){ //name not found
+        return 1;
+    }
+    int count = 0;
+    for(int i= 0; i<64; i++){ 
+        if(dir_table->table[i].user_attribute == UATTR_NOT_EMPTY) count++;
+    }
+    if(count == 0){ // check if entry is empty
+        index = low | (high << 16);
+        if (request.buffer_size == 0){
+            driver_state.fat_table.cluster_map[index] = FAT32_FAT_EMPTY_ENTRY;
+            write_clusters(&driver_state.fat_table, 1, 1);
+        }
+        else { 
+            while(driver_state.fat_table.cluster_map[index] != FAT32_FAT_END_OF_FILE){
+                driver_state.fat_table.cluster_map[index] = FAT32_FAT_EMPTY_ENTRY;
+                uint32_t next = driver_state.fat_table.cluster_map[index];
+                index = next;
+            }
+            write_clusters(&driver_state.fat_table, 1, 1);
+        }
+        return 0;
+    } else { //entry is not empty
+        return 2;
+    }
+    return -1;
 }
