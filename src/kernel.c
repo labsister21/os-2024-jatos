@@ -25,7 +25,7 @@ void kernel_setup(void)
     struct BlockBuffer b;
     for (int i = 0; i < 512; i++) b.buf[i] = i % 16;
     write_blocks(&b, 17, 1);
-    while (true);
+    static int maxCol = -1;
 
     int col = -1;
     int row = 0;
@@ -44,6 +44,9 @@ void kernel_setup(void)
             if (col > -1){
                 framebuffer_write(row, col, 0x0, 0x7, 0x0);
                 col--;
+                if (col == maxCol - 1){
+                    maxCol = col;
+                }
                 if (col == -1){
                     framebuffer_set_cursor(0, 0);
                 } else {
@@ -58,12 +61,17 @@ void kernel_setup(void)
             }
         }
         else if (c == 0x4d){
-            col++;
+            if (col < maxCol){
+                col++;
+            }
             framebuffer_set_cursor(row, col);
         }
       
         else if(c != 0){
             col++;
+            if (col == maxCol + 1){
+                maxCol = col;
+            }
             framebuffer_write(0, col, c, 0xF, 0);
             framebuffer_set_cursor(0, col);
         }
