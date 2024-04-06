@@ -117,10 +117,10 @@ void keyboard_isr(void) {
     }
 
     if (keyboard_state.keyboard_input_on) {
-        // Memeriksa apakah scancode merupakan tombol "delete"
-        if (scancode == 0xe || scancode == 0x4b || scancode == 0x4d) { // Jika scancode adalah untuk tombol "delete"
-            // Menghapus karakter sebelumnya yang sudah di write
+        // Memeriksa apakah scancode merupakan tombol "delete" / "left arrow key" / "right arrow key"
+        if (scancode == 0xe || scancode == 0x4b || scancode == 0x4d) { 
             keyboard_state.keyboard_buffer = scancode;
+            
         } else {
             // Memasukkan karakter sesuai dengan map scancode to ASCII ke dalam buffer
             if ((isShift) && (!isCapsLock)){ // Jika shift tetapi bukan capslock

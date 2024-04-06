@@ -25,7 +25,7 @@ const uint8_t fs_signature[BLOCK_SIZE] = {
  * @return uint32_t Logical Block Address
  */
 uint32_t cluster_to_lba(uint32_t cluster){
-    return cluster * CLUSTER_MAP_SIZE;
+    return cluster * CLUSTER_BLOCK_COUNT;
 }
 
 /**
@@ -70,7 +70,7 @@ void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uin
 bool is_empty_storage(void){
     uint8_t boot_sector[BLOCK_SIZE];
     read_blocks(boot_sector, 0, 1);
-    return memcmp(boot_sector, fs_signature, BLOCK_SIZE);
+    return memcmp(boot_sector, fs_signature, BLOCK_SIZE) != 0;
 }
 
 /**
@@ -79,26 +79,28 @@ bool is_empty_storage(void){
  * and initialized root directory) into cluster number 1
  */
 void create_fat32(void){
-    // inisiasi boot sector (ga boleh disentuh, reset)
-    uint8_t boot_sector[BLOCK_SIZE];
-    memset(boot_sector,0,BLOCK_SIZE);
-    memcpy(boot_sector,fs_signature,BLOCK_SIZE);
-    write_blocks(boot_sector, 0, 1);
 
-    // sector pertama
+    /* CLUSTER 0 */
+    // menulis signature ke boot sector ke block 0 (cluster 0)
+    write_blocks(fs_signature, BOOT_SECTOR, 1);
+
+    /* CLUSTER 1 */
+    // mengisi map value FAT table
     driver_state.fat_table.cluster_map[0] = CLUSTER_0_VALUE;
     driver_state.fat_table.cluster_map[1] = CLUSTER_1_VALUE;
     driver_state.fat_table.cluster_map[2] = FAT32_FAT_END_OF_FILE;
-    write_clusters(&driver_state.fat_table.cluster_map, 1, 1);
-
-    // sector kedua isinya root
-    struct FAT32DirectoryTable directory_table = {0};
-    init_directory_table(&directory_table,"root\0\0\0\0",2);
-    write_clusters(&directory_table, 2, 1);
-
     for(int i = 3 ; i < CLUSTER_SIZE; i++){
         driver_state.fat_table.cluster_map[i] = FAT32_FAT_EMPTY_ENTRY;
     }
+    // menulis FAT table ke cluster 1 (FAT table cluster)
+    write_clusters(&(driver_state.fat_table), FAT_CLUSTER_NUMBER, 1);
+
+    /* CLUSTER 2 */
+    // menginisiasi value dir_table_buf dengan root directory
+    init_directory_table(&(driver_state.dir_table_buf), "root\0\0\0\0", ROOT_CLUSTER_NUMBER);
+
+    // menulis dir_table_buf ke cluster 2 (root dir table cluster)
+    write_clusters(&(driver_state.dir_table_buf), ROOT_CLUSTER_NUMBER, 1); 
 }
 
 /**
@@ -109,7 +111,10 @@ void initialize_filesystem_fat32(void){
     if (is_empty_storage()){
         create_fat32();
     } else {
-        read_clusters(&driver_state.fat_table.cluster_map, 1, 1);
+        // menulis FAT table ke driverstate
+        read_clusters(&(driver_state.fat_table), FAT_CLUSTER_NUMBER, 1);
+        // menulis root directory ke driverstate
+        read_clusters(&(driver_state.dir_table_buf), ROOT_CLUSTER_NUMBER, 1);
     }
 }
 
@@ -158,7 +163,6 @@ int8_t read_directory(struct FAT32DriverRequest request){
         return -1;
     }
 
-    // loop cari idx nya
     struct FAT32DirectoryTable *dir_table;
     read_clusters(&dir_table, request.parent_cluster_number, 1);
 
