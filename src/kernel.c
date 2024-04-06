@@ -52,14 +52,14 @@ void kernel_setup(void)
             }
         }
         /* left arrow key */
-        else if (c == 0x4b){
+        else if (c == 0x1F){
             if (col > 0){
                 col--;
                 framebuffer_set_cursor(row, col);
             }
         }
         /* right arrow key */
-        else if (c == 0x4d){
+        else if (c == 0x1E){
             if (col < maxCol){
                 col++;
             }

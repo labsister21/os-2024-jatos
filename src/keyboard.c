@@ -118,9 +118,12 @@ void keyboard_isr(void) {
 
     if (keyboard_state.keyboard_input_on) {
         // Memeriksa apakah scancode merupakan tombol "delete" / "left arrow key" / "right arrow key"
-        if (scancode == 0xe || scancode == 0x4b || scancode == 0x4d) { 
+        if (scancode == 0xe) { // delete
             keyboard_state.keyboard_buffer = scancode;
-            
+        } else if (scancode == 0x4b){ // left arrow
+            keyboard_state.keyboard_buffer = 0x1F;
+        } else if (scancode == 0x4d){ // right arrow
+            keyboard_state.keyboard_buffer = 0x1E;
         } else {
             // Memasukkan karakter sesuai dengan map scancode to ASCII ke dalam buffer
             if ((isShift) && (!isCapsLock)){ // Jika shift tetapi bukan capslock
