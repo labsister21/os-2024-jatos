@@ -21,11 +21,9 @@ void kernel_setup(void)
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
 
-
     struct BlockBuffer b;
     for (int i = 0; i < 512; i++) b.buf[i] = i % 16;
     write_blocks(&b, 17, 1);
-    while (true);
 
     int col = -1;
     int row = 0;
@@ -34,7 +32,6 @@ void kernel_setup(void)
 
     while (true)
     {   
-
         char c;
 
         get_keyboard_buffer(&c);
@@ -51,17 +48,19 @@ void kernel_setup(void)
                 }
             }
         }
+        /* left arrow key */
         else if (c == 0x4b){
             if (col > 0){
                 col--;
                 framebuffer_set_cursor(row, col);
             }
         }
+        /* right arrow key */
         else if (c == 0x4d){
             col++;
             framebuffer_set_cursor(row, col);
         }
-      
+        /* write char */
         else if(c != 0){
             col++;
             framebuffer_write(0, col, c, 0xF, 0);
