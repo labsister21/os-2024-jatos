@@ -128,8 +128,7 @@ void initialize_filesystem_fat32(void){
  * @param cluster_count  Cluster count to write, due limitation of write_blocks block_count 255 => max cluster_count = 63
  */
 void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_count){
-    struct ClusterBuffer* cluster_buffer = ptr;
-    write_blocks(cluster_buffer, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
+    write_blocks(ptr, cluster_to_lba(cluster_number), cluster_count*CLUSTER_BLOCK_COUNT);
 }
 
 /**
@@ -196,7 +195,7 @@ int8_t read_directory(struct FAT32DriverRequest request){
 int8_t read(struct FAT32DriverRequest request){
 
     // Jika nama file request kosong
-    if ((memcpm(request.name), "\0\0\0\0\0\0\0\0", 8) == 0){
+    if (memcmp(request.name, "\0\0\0\0\0\0\0\0", 8) == 0){
         return -1;
     }
 
@@ -310,8 +309,8 @@ int8_t write(struct FAT32DriverRequest request){
                     if (written == 0){
                         struct FAT32DirectoryEntry new_entry;
                         new_entry.user_attribute = UATTR_NOT_EMPTY;
-                        memset(&(new_entry.name), request.name, 8);
-                        memset(&(new_entry.ext), request.ext, 3);
+                        memcpy(request.name, &(new_entry.name), 8);
+                        memcpy(request.ext, &(new_entry.ext), 3);
                         new_entry.cluster_high = i >> 16;
                         new_entry.cluster_low = i & 0xFFFF;
                         new_entry.filesize = reqSize;
@@ -352,7 +351,8 @@ int8_t write(struct FAT32DriverRequest request){
  */
 int8_t delete(struct FAT32DriverRequest request){
     struct FAT32DirectoryTable *dir_table;
-    uint16_t high, low, index = -1; 
+    uint16_t high, low;
+    int index = -1; 
     read_clusters(&dir_table, request.parent_cluster_number, 1);
     for (int i = 0; i < CLUSTER_SIZE;i++){
         if (memcmp(request.name,dir_table->table[i].name,8) == 0){
