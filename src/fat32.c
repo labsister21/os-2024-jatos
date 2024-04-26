@@ -253,6 +253,13 @@ int8_t read(struct FAT32DriverRequest request){
  */
 int8_t write(struct FAT32DriverRequest request){
  
+    // // file/folder sudah ada
+    // for (int i = 3 ; i < (CLUSTER_SIZE); i++){
+    //     if(memcmp(request.name, driver_state.dir_table_buf.table[i].name,8 ) == 0){
+    //         return 1;
+    //     }
+    // }
+    
     // parent cluster tidak valid
     if(driver_state.fat_table.cluster_map[request.parent_cluster_number] == FAT32_FAT_EMPTY_ENTRY){
         return 2;
@@ -281,7 +288,6 @@ int8_t write(struct FAT32DriverRequest request){
                 slotAvailable = 1;
                 write_clusters(&new_folder, i, 1);
                 driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
-                write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
                 break;
             }
         }
@@ -328,7 +334,6 @@ int8_t write(struct FAT32DriverRequest request){
                     }
                     if (written == clusterNeed){
                         driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
-                        write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
                     }
                     clustBefore = i;
                 }
@@ -346,69 +351,41 @@ int8_t write(struct FAT32DriverRequest request){
  * @return Error code: 0 success - 1 not found - 2 folder is not empty - -1 unknown
  */
 int8_t delete(struct FAT32DriverRequest request){
-
-    // request kosong
-    if (memcmp(&(request.name), "\0\0\0\0\0\0\0\0", 8) == 0){
-        return -1;
-    }
-
-    struct FAT32DirectoryTable *parent_dir_table;
+    struct FAT32DirectoryTable *dir_table;
     uint16_t high, low, index = -1; 
-    read_clusters(parent_dir_table, request.parent_cluster_number, 1);
-
-    // mencari entry yang akan dihapus di parent dir cluster entry
-    for (int i = 0; i < (CLUSTER_SIZE / 32); i++){
-        if (memcmp(request.name, parent_dir_table->table[i].name, 8) == 0){
-            high = parent_dir_table->table[i].cluster_high;
-            low = parent_dir_table->table[i].cluster_low;
+    read_clusters(&dir_table, request.parent_cluster_number, 1);
+    for (int i = 0; i < CLUSTER_SIZE;i++){
+        if (memcmp(request.name,dir_table->table[i].name,8) == 0){
+            high = dir_table->table[i].cluster_high;
+            low = dir_table->table[i].cluster_low;
             index = i;
             break;
         }
     }
-
-    // entry yang ingin dihapus tidak ditemukan di parent dir cluster entry
-    if (index == -1){ 
+    if (index == -1){ //name not found
         return 1;
     }
-
-    // Menghapus entry jika entry adalah folder
-    if (memcmp(&(request.ext), "\0\0\0", 3) == 0){
-        int count = 0;
-        int req_cluster = (high << 16) | low;
-        struct FAT32DirectoryTable *req_dir_table;
-        read_clusters(req_dir_table, req_cluster, 1);
-
-        for (int i = 1; i < (CLUSTER_SIZE / 32); i++){ 
-            if (req_dir_table->table[i].user_attribute == UATTR_NOT_EMPTY) {
-                return 2;
+    int count = 0;
+    for(int i= 0; i<64; i++){ 
+        if(dir_table->table[i].user_attribute == UATTR_NOT_EMPTY) count++;
+    }
+    if(count == 0){ // check if entry is empty
+        index = low | (high << 16);
+        if (request.buffer_size == 0){
+            driver_state.fat_table.cluster_map[index] = FAT32_FAT_EMPTY_ENTRY;
+            write_clusters(&driver_state.fat_table, 1, 1);
+        }
+        else { 
+            while(driver_state.fat_table.cluster_map[index] != FAT32_FAT_END_OF_FILE){
+                driver_state.fat_table.cluster_map[index] = FAT32_FAT_EMPTY_ENTRY;
+                uint32_t next = driver_state.fat_table.cluster_map[index];
+                index = next;
             }
+            write_clusters(&driver_state.fat_table, 1, 1);
         }
-
-        parent_dir_table->table[index].user_attribute = 0;
-        driver_state.fat_table.cluster_map[req_cluster] = FAT32_FAT_EMPTY_ENTRY;
-
-        write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
-        write_clusters(parent_dir_table, request.parent_cluster_number, 1);
-    }
-
-    // Menghapus entry jika entry adalah file
-    else{
-        int req_cluster = low | (high << 16);
-
-        // mengupdate FAT table
-        while(driver_state.fat_table.cluster_map[req_cluster] != FAT32_FAT_END_OF_FILE){
-            driver_state.fat_table.cluster_map[req_cluster] = FAT32_FAT_EMPTY_ENTRY;
-            uint32_t next = driver_state.fat_table.cluster_map[req_cluster];
-            req_cluster = next;
-        }
-        write_clusters(&driver_state.fat_table, 1, 1);
-
-        // mengupdate parent dir table
-        parent_dir_table->table[index].user_attribute = 0;
-        write_clusters(parent_dir_table, request.parent_cluster_number, 1);
-        
         return 0;
+    } else { //entry is not empty
+        return 2;
     }
-
     return -1;
 }
