@@ -25,6 +25,7 @@ static struct PageManagerState page_manager_state = {
         [0]                            = true,
         [1 ... PAGE_FRAME_MAX_COUNT-1] = false
     },
+    .free_page_frame_count = PAGE_FRAME_MAX_COUNT - 1,
     // TODO: Initialize page manager state properly
 };
 
@@ -50,6 +51,19 @@ void flush_single_tlb(void *virtual_addr) {
 // TODO: Implement
 bool paging_allocate_check(uint32_t amount) {
     // TODO: Check whether requested amount is available
+    uint32_t count = 0;
+    for (int i = 0; i < PAGE_ENTRY_COUNT; i++){
+        if (_paging_kernel_page_directory.table[i].flag.present_bit == 0){
+            count++;
+        }
+    }
+    
+    // convert ke byte(?) karena page sizenya 4 MB, jdi utk setiap count dikali 2^22(?)
+    if ((count << 22) >= amount){
+        return true;
+    } else {
+        return false;
+    }
     return true;
 }
 
@@ -65,6 +79,27 @@ bool paging_allocate_user_page_frame(struct PageDirectory *page_dir, void *virtu
      *     > user bit       true
      *     > pagesize 4 mb  true
      */ 
+    int idx = -1;
+
+    for (int i = 0; i < PAGE_FRAME_MAX_COUNT; i++){
+        if (!page_manager_state.page_frame_map[i]){
+            idx = i;
+            break;
+        }
+    }
+
+    uint32_t phys_address = (idx * (1 << 22)) + 0x400000;
+
+    page_manager_state.page_frame_map[idx] = false;
+    page_manager_state.free_page_frame_count--;
+
+    // page_dir->table[virtual_addr].flag.present_bit = 1;
+    // page_dir->table[virtual_addr].flag.write_bit = 1;
+    // page_dir->table[virtual_addr].flag.user_bit = 1;
+    // page_dir->table[virtual_addr].flag.use_pagesize_4_mb = 1;
+    // page_dir->table[virtual_addr].higher_address = phys_address diapain?;
+    // page_dir->table[virtual_addr].lower_address = phys_address diapain?;
+
     return true;
 }
 

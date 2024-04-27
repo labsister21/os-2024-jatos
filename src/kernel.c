@@ -11,6 +11,7 @@
 #include "header/driver/keyboard.h"
 #include "header/driver/disk.h"
 #include "header/filesystem/fat32.h"
+#include "header/memory/paging.h"
 
 void kernel_setup(void)
 {
