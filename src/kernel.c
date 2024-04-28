@@ -30,6 +30,7 @@ void kernel_setup(void)
     int row = 0;
     keyboard_state_activate();
     framebuffer_write(0, 0, 0x0, 0x7, 0x0);
+    initialize_filesystem_fat32();
 
     while (true)
     {   
