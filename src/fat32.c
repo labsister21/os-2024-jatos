@@ -38,30 +38,23 @@ uint32_t cluster_to_lba(uint32_t cluster){
  * @param parent_dir_cluster Parent directory cluster number
  */
 void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster){
+
+    struct FAT32DirectoryEntry *new_entry = &(dir_table->table[0]);
+
+    memcpy(&(new_entry->name), name, 8);
+    memcpy(&(new_entry->ext), "\0\0\0", 3);
+
+    new_entry->attribute = ATTR_SUBDIRECTORY;
+    new_entry->user_attribute = UATTR_NOT_EMPTY;
+
+    new_entry->cluster_high = (uint16_t)(parent_dir_cluster >> 16);
+    new_entry->cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
+    new_entry->filesize = 0;
     
-    // Buat new entry
-    struct FAT32DirectoryEntry new_entry;
-
-    // Inisialisasi data entry (tipe folder)
-    new_entry.user_attribute = UATTR_NOT_EMPTY;
-    new_entry.attribute = ATTR_SUBDIRECTORY;
-    new_entry.filesize = 0;
-    
-    // Set nama entry
-    for(int i = 0 ; i < 8 ; i++){
-        new_entry.name[i] = name[i];
-    }
-
-    // Set ext entry (\0\0\0 karena folder gada ext)
-    for(int i = 0 ; i < 3;i++){
-        new_entry.ext[i] = '\0';
-    }
-
-    new_entry.cluster_low = parent_dir_cluster & 0xFFFF;
-    new_entry.cluster_high = parent_dir_cluster >> 16;
-
-    dir_table->table[0] = new_entry;
+    dir_table->table[0] = *new_entry;
 }
+
+
 
 /**
  * Checking whether filesystem signature is missing or not in boot sector
@@ -280,15 +273,34 @@ int8_t write(struct FAT32DriverRequest request){
         init_directory_table(&new_folder, request.name, request.parent_cluster_number);
 
         for(int i = ROOT_CLUSTER_NUMBER ; i < CLUSTER_SIZE; i++){
+
             if(driver_state.fat_table.cluster_map[i] == FAT32_FAT_EMPTY_ENTRY ){
                 slotAvailable = 1;
+
+                struct FAT32DirectoryEntry new_entry;
+                new_entry.user_attribute = UATTR_NOT_EMPTY;
+                memcpy(&(new_entry.name), request.name, 8);
+                new_entry.cluster_high = (i >> 16) & 0xFFFF;
+                new_entry.cluster_low = i & 0xFFFF;
+                new_entry.filesize = reqSize;
+
+                for (int j = 0; j < (CLUSTER_SIZE / 32); j++){
+                    if(driver_state.dir_table_buf.table[j].user_attribute != UATTR_NOT_EMPTY){
+                        driver_state.dir_table_buf.table[j] = new_entry;
+                        break;
+                    }
+                }
+                    
                 write_clusters(&new_folder, i, 1);
+
                 driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
                 write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
+
+                write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
                 break;
             }
         }
-        if (!slotAvailable){ // parent dir penuh dan tidak bisa nulis lagi
+        if (slotAvailable != 1){ // parent dir penuh dan tidak bisa nulis lagi
             return -1;
         }
     }
@@ -308,7 +320,7 @@ int8_t write(struct FAT32DriverRequest request){
                         new_entry.user_attribute = UATTR_NOT_EMPTY;
                         memcpy(&(new_entry.name), request.name, 8);
                         memcpy(&(new_entry.ext), request.ext, 3);
-                        new_entry.cluster_high = i >> 16;
+                        new_entry.cluster_high = (i >> 16) & 0xFFFF;
                         new_entry.cluster_low = i & 0xFFFF;
                         new_entry.filesize = reqSize;
                         clustBefore = i;
