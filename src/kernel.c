@@ -11,7 +11,6 @@
 #include "header/driver/keyboard.h"
 #include "header/driver/disk.h"
 #include "header/filesystem/fat32.h"
-#include "header/memory/paging.h"
 
 void kernel_setup(void)
 {
@@ -22,15 +21,69 @@ void kernel_setup(void)
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
 
-    struct BlockBuffer b;
-    for (int i = 0; i < 512; i++) b.buf[i] = i % 16;
-    write_blocks(&b, 17, 1);
+    // struct BlockBuffer b;
+    // for (int i = 0; i < 512; i++) b.buf[i] = i % 16;
     static int maxCol = -1;
     int col = -1;
     int row = 0;
     keyboard_state_activate();
     framebuffer_write(0, 0, 0x0, 0x7, 0x0);
     initialize_filesystem_fat32();
+    // write_blocks(&b, 0, 1);
+
+    // char text[] = "rafi gabisa run qemu";
+    
+    // struct FAT32DriverRequest b = {
+    //     .buf = text,
+    //     .name = "rafi1\0\0\0",
+    //     .ext = "txt",
+    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    //     .buffer_size = 20,
+    // };
+
+    // write(b);
+
+    // char text2[] = "ini teks baru";
+    
+    // struct FAT32DriverRequest b2 = {
+    //     .buf = text2,
+    //     .name = "andi2\0\0\0",
+    //     .ext = "txt",
+    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    //     .buffer_size = 13,
+    // };
+
+    // write(b2);
+
+    // struct ClusterBuffer buf_text;
+
+    // struct FAT32DriverRequest r = {
+    //     .buf = &(buf_text.buf),
+    //     .name = "rafi1\0\0\0",
+    //     .ext = "txt",
+    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    //     .buffer_size = 2048,
+    // };
+    struct FAT32DriverRequest d = {
+        .name = "rafi2\0\0\0",
+        .ext = "txt",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size = 2048,
+    };
+    delete(d);
+    
+     
+    // struct FAT32DriverRequest w = {
+    //     .buf = r.buf,
+    //     .name = "write2\0\0",
+    //     .ext = "txt",
+    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    //     .buffer_size = 20,
+    // };
+
+    // write(w);
+    
+
 
     while (true)
     {   
