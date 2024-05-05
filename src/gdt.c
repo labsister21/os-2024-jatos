@@ -55,6 +55,38 @@ struct GlobalDescriptorTable global_descriptor_table = {
             .base_high = 0
         },
         {
+            // User code descriptor
+            .segment_low = 0xFFFF,
+            .base_low = 0,
+            .base_mid =0,
+            .type_bit = 0xA,
+            .non_system = 1,
+            .dpl = 3,
+            .p = 1,
+            .seg_limit = 0xF,
+            .l = 0,
+            .default_op = 1,
+            .g = 1,
+            .base_high = 0
+
+        },
+        {
+            //user data descriptor
+            .segment_low = 0xFFFF,
+            .base_low = 0,
+            .base_mid =0,
+            .type_bit = 0x2,
+            .non_system = 1,
+            .dpl = 3,
+            .p = 1,
+            .seg_limit = 0xF,
+            .l = 0,
+            .default_op = 1,
+            .g = 1,
+            .base_high = 0
+
+        },
+        {
             //TSS
             .segment_low       = sizeof(struct TSSEntry),
             .base_low          = 0,
