@@ -56,15 +56,27 @@ void kernel_setup(void)
 
     // write(b2);
 
-    // struct ClusterBuffer buf_text;
+    struct ClusterBuffer buf_text;
 
-    // struct FAT32DriverRequest r = {
-    //     .buf = &(buf_text.buf),
-    //     .name = "rafi1\0\0\0",
-    //     .ext = "txt",
-    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-    //     .buffer_size = 2048,
-    // };
+    struct FAT32DriverRequest r = {
+        .buf = &(buf_text.buf),
+        .name = "rafi1\0\0\0",
+        .ext = "txt",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size = 2048,
+    };
+
+    read(r);
+
+    struct FAT32DriverRequest w = {
+        .buf = r.buf,
+        .name = "rafi2\0\0\0",
+        .ext = "txt",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size = 2048,
+    };
+
+    write(w);
     // struct FAT32DriverRequest d = {
     //     .name = "rafi2\0\0\0",
     //     .ext = "txt",
