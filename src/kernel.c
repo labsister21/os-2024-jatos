@@ -15,6 +15,7 @@
 void kernel_setup(void)
 {
     load_gdt(&_gdt_gdtr);
+    initialize_filesystem_fat32();
     pic_remap();
     initialize_idt();
     activate_keyboard_interrupt();
@@ -28,7 +29,6 @@ void kernel_setup(void)
     int row = 0;
     keyboard_state_activate();
     framebuffer_write(0, 0, 0x0, 0x7, 0x0);
-    initialize_filesystem_fat32();
     // write_blocks(&b, 0, 1);
 
     // char text[] = "rafi gabisa run qemu";
