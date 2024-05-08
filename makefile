@@ -22,7 +22,7 @@ LFLAGS        = -T $(SOURCE_FOLDER)/linker.ld -melf_i386
 
 
 run: all
-	@qemu-system-i386 -s -S -drive file=sample-image.bin,format=raw,if=ide,index=0,media=disk -cdrom OS2024.iso
+	@qemu-system-i386 -s -S -drive file=bin/sample-image.bin,format=raw,if=ide,index=0,media=disk -cdrom bin/OS2024.iso
 all: build
 build: iso
 clean:

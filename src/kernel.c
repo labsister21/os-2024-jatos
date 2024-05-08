@@ -11,6 +11,7 @@
 #include "header/driver/keyboard.h"
 #include "header/driver/disk.h"
 #include "header/filesystem/fat32.h"
+#include "header/memory/paging.h"
 
 void kernel_setup(void)
 {
@@ -64,13 +65,13 @@ void kernel_setup(void)
     //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
     //     .buffer_size = 2048,
     // };
-    struct FAT32DriverRequest d = {
-        .name = "rafi2\0\0\0",
-        .ext = "txt",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size = 2048,
-    };
-    delete(d);
+    // struct FAT32DriverRequest d = {
+    //     .name = "rafi2\0\0\0",
+    //     .ext = "txt",
+    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    //     .buffer_size = 2048,
+    // };
+    // delete(d);
     
      
     // struct FAT32DriverRequest w = {

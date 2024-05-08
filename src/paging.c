@@ -51,20 +51,11 @@ void flush_single_tlb(void *virtual_addr) {
 // TODO: Implement
 bool paging_allocate_check(uint32_t amount) {
     // TODO: Check whether requested amount is available
-    uint32_t count = 0;
-    for (int i = 0; i < PAGE_ENTRY_COUNT; i++){
-        if (_paging_kernel_page_directory.table[i].flag.present_bit == 0){
-            count++;
-        }
-    }
-    
-    // convert ke byte(?) karena page sizenya 4 MB, jdi utk setiap count dikali 2^22(?)
-    if ((count << 22) >= amount){
-        return true;
-    } else {
+    if (page_manager_state.free_page_frame_count < (amount >> 22)){
         return false;
+    } else {
+        return true;
     }
-    return true;
 }
 
 
@@ -79,6 +70,11 @@ bool paging_allocate_user_page_frame(struct PageDirectory *page_dir, void *virtu
      *     > user bit       true
      *     > pagesize 4 mb  true
      */ 
+    
+    if (!paging_allocate_check((uint32_t) virtual_addr)){
+        return false;
+    }
+
     int idx = -1;
 
     for (int i = 0; i < PAGE_FRAME_MAX_COUNT; i++){
@@ -88,18 +84,20 @@ bool paging_allocate_user_page_frame(struct PageDirectory *page_dir, void *virtu
         }
     }
 
-    uint32_t phys_address = (idx * (1 << 22)) + 0x400000;
+    // uint32_t *phys_address = (idx * (1 << 22)) + 0x400000;
+    uint32_t *phys_address = (uint32_t*) (idx * (1 << 22));
 
-    page_manager_state.page_frame_map[idx] = false;
+    page_manager_state.page_frame_map[idx] = true;
+
+    update_page_directory_entry(page_dir, phys_address, virtual_addr, (struct PageDirectoryEntryFlag){
+            .present_bit = 1,
+            .write_bit = 1,
+            .user_bit = 1,
+            .use_pagesize_4_mb = 1
+        }
+    );
+
     page_manager_state.free_page_frame_count--;
-
-    // page_dir->table[virtual_addr].flag.present_bit = 1;
-    // page_dir->table[virtual_addr].flag.write_bit = 1;
-    // page_dir->table[virtual_addr].flag.user_bit = 1;
-    // page_dir->table[virtual_addr].flag.use_pagesize_4_mb = 1;
-    // page_dir->table[virtual_addr].higher_address = phys_address diapain?;
-    // page_dir->table[virtual_addr].lower_address = phys_address diapain?;
-
     return true;
 }
 
@@ -109,5 +107,18 @@ bool paging_free_user_page_frame(struct PageDirectory *page_dir, void *virtual_a
      * - Use the page_dir.table values to check mapped physical frame
      * - Remove the entry by setting it into 0
      */
+
+    uint32_t page_idx = ((uint32_t) virtual_addr >> 22) & 0x3FF;
+    uint32_t pyhs_address = page_dir->table[page_idx].lower_address;
+    page_manager_state.page_frame_map[pyhs_address] = false;
+    page_manager_state.free_page_frame_count++;
+
+    update_page_directory_entry(page_dir, 0, virtual_addr, (struct PageDirectoryEntryFlag){
+        .present_bit = 0,
+        .write_bit = 0,
+        .user_bit = 0,
+        .use_pagesize_4_mb = 0
+    });
+    
     return true;
 }
