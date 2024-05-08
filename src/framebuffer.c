@@ -5,6 +5,8 @@
 #include "header/stdlib/string.h"
 #include "header/cpu/portio.h"
 
+struct Cursor cursor = {0, 0};
+
 void framebuffer_set_cursor(uint8_t r, uint8_t c) {
     uint16_t position = r * 80 + c;
 
@@ -26,4 +28,37 @@ void framebuffer_clear(void) {
     //     }
     // }
     memset(FRAMEBUFFER_MEMORY_OFFSET,0 ,80 * 25 *2);
+}
+
+
+
+struct Cursor framebuffer_get_cursor() {
+    out(CURSOR_PORT_CMD, 0x0E);
+    int offset = in(CURSOR_PORT_DATA) << 8;
+    out(CURSOR_PORT_CMD, 0x0F);
+    offset += in(CURSOR_PORT_DATA);
+    struct Cursor c =
+    {
+        .row = offset / 80,
+        .col = offset % 80
+    };
+    return c;
+}
+
+
+void putchar(char c, char color) {
+    framebuffer_write(cursor.row, cursor.col, c, color, 0);
+}
+
+void puts(char* str, char count, char color) {
+    for (int i = 0; i < count; i++) {
+        if (str[i] == '\n') {
+            cursor.row++;
+            cursor.col = 0;
+        } else {
+            putchar(str[i], color);
+            cursor.col++;
+        }
+    }
+    framebuffer_set_cursor(cursor.row, cursor.col);
 }

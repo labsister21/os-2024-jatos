@@ -9,6 +9,10 @@
 #define CURSOR_PORT_CMD    0x03D4
 #define CURSOR_PORT_DATA   0x03D5
 
+struct Cursor {
+    uint8_t row;
+    uint8_t col;
+};
 /**
  * Terminal framebuffer
  * Resolution: 80x25
@@ -37,6 +41,8 @@ void framebuffer_write(uint8_t row, uint8_t col, char c, uint8_t fg, uint8_t bg)
 */
 void framebuffer_set_cursor(uint8_t r, uint8_t c);
 
+struct Cursor framebuffer_get_cursor();
+
 /**
  * Set all cell in framebuffer character to 0x00 (empty character)
  * and color to 0x07 (gray character & black background)
@@ -44,5 +50,10 @@ void framebuffer_set_cursor(uint8_t r, uint8_t c);
  *
  */
 void framebuffer_clear(void);
+
+void putchar(char ebx, char ecx);
+void puts(char* ebx, char ecx, char edx);
+
+
 
 #endif
