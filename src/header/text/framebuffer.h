@@ -10,8 +10,8 @@
 #define CURSOR_PORT_DATA   0x03D5
 
 struct Cursor {
-    uint8_t row;
-    uint8_t col;
+    int row;
+    int col;
 };
 /**
  * Terminal framebuffer

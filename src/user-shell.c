@@ -50,15 +50,15 @@ int main(void) {
     
     int32_t retcode;
     syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
-    if (retcode == 0)
-        syscall(6, (uint32_t) "owo\n", 4, WHITE);
+    // if (retcode == 0)
+    //     syscall(6, (uint32_t) "owo\n", 4, WHITE);
 
     char buf;
     syscall(7, 0, 0, 0);
     while (true) {
-        syscall(4, (uint32_t) &buf, 0, 0);
+        // syscall(4, (uint32_t) &buf, 0, 0);
 
-        syscall(5, (uint32_t) &buf, 0xF, 0);
+        // syscall(5, (uint32_t) &buf, 0xF, 0);
     }
 
     return 0;

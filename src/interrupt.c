@@ -89,13 +89,15 @@ void syscall(struct InterruptFrame frame) {
             break;
         case 4:
             get_keyboard_buffer((char*) frame.cpu.general.ebx);
-            if(buf == 0)
-            {
-                ls()
-            }
+            // if(buf == 0)
+            // {
+            //     ls()
+            // }
             break;
         case 5:
-            putchar(frame.cpu.general.ebx,4); // Assuming putc() exist in kernel
+            if (frame.cpu.general.ebx >= 32 && frame.cpu.general.ebx <= 127){
+                putchar(frame.cpu.general.ebx,4); // Assuming putc() exist in kernel
+            }
             break;
         case 6:
             puts(
