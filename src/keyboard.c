@@ -90,6 +90,8 @@ void keyboard_isr(void) {
     static bool isShift = false;
     static bool isCapsLock = false;
     static int maxCol = -1;
+    static int latestMaxCol = 0;
+    static int maxRow = 0;
     // TODO : Implement scancode processing
     // if(keyboard_state.keyboard_input_on){
     //   keyboard_state.keyboard_buffer = keyboard_scancode_1_to_ascii_map[scancode];
@@ -117,54 +119,87 @@ void keyboard_isr(void) {
         return;
     }
 
-    struct Cursor cursor = framebuffer_get_cursor();
+    struct Cursor c = framebuffer_get_cursor();
 
     if (keyboard_state.keyboard_input_on) {
         // Memeriksa apakah scancode merupakan tombol "delete" / "left arrow key" / "right arrow key"
         if (scancode == 0xe) { // backspace
             keyboard_state.keyboard_buffer = 0x0;
-            if (cursor.col >= 0){
-                framebuffer_write(cursor.row, cursor.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
-                if (cursor.col > 0){
-                    cursor.col--;
+            if ((c.col > 0) && (c.col <= 79)){
+                framebuffer_write(c.row, c.col-1, keyboard_state.keyboard_buffer, 0xF, 0x0);
+                if (c.col > 0){
+                    c.col--;
+                    if (c.col >= maxCol){
+                        maxCol--;
+                    }
                 }
-                if (cursor.col == 79){
-                    maxCol = cursor.col;
+            } else {
+                if (c.row > 0){
+                    c.row--;
+                    c.col = 79;
+                    framebuffer_write(c.row, c.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
                 }
             }
         } else if (scancode == 0x4b){ // left arrow
             keyboard_state.keyboard_buffer = 0x1F;
-            if (cursor.col > 0){
-                cursor.col--;
+            if (c.col > 0){
+                c.col--;
+            } else if ((c.col == 0) && (c.row > 0)){
+                c.row--;
+                c.col = 79;
+                if (maxCol != 79){
+                    latestMaxCol = maxCol;
+                }
+                maxCol = 79;
             }
         } else if (scancode == 0x4d){ // right arrow
             keyboard_state.keyboard_buffer = 0x1E;
-            if (cursor.col < maxCol){
-                cursor.col++;
+            if (c.col <= maxCol){
+                c.col++;
+            } else if (c.col == 79){
+                c.row++;
+                c.col = 0;
+                if (c.row == maxRow){
+                    maxCol = latestMaxCol;
+                }
             }
         } else {
             // Memasukkan karakter sesuai dengan map scancode to ASCII ke dalam buffer
             if ((isShift) && (!isCapsLock)){ // Jika shift tetapi bukan capslock
-                keyboard_state.keyboard_buffer = keyboard_scancode_shift_to_ascii_map[scancode];
+                if (keyboard_scancode_shift_to_ascii_map[scancode] != 0){
+                    keyboard_state.keyboard_buffer = keyboard_scancode_shift_to_ascii_map[scancode];
+                }
             } else if ((!isShift) && (isCapsLock)){ // Jika bukan shift tetapi capslock
-                keyboard_state.keyboard_buffer = keyboard_scancode_capslock_to_ascii_map[scancode];
+                if (keyboard_scancode_capslock_to_ascii_map[scancode] != 0){
+                    keyboard_state.keyboard_buffer = keyboard_scancode_capslock_to_ascii_map[scancode];
+                }
             } else if ((isShift) && (isCapsLock)){ // Jika shift dan capslock
-                keyboard_state.keyboard_buffer = keyboard_scancode_shift_capslock_to_ascii_map[scancode];
-            } else { // Jika bukan shift dan bukan capslock
-                keyboard_state.keyboard_buffer = keyboard_scancode_1_to_ascii_map[scancode];
+                if (keyboard_scancode_shift_capslock_to_ascii_map[scancode] != 0){
+                    keyboard_state.keyboard_buffer = keyboard_scancode_shift_capslock_to_ascii_map[scancode];
+                }
+            } else { // Jika bukan shift dan bukan capslock.
+                if (keyboard_scancode_1_to_ascii_map[scancode] != 0){
+                    keyboard_state.keyboard_buffer = keyboard_scancode_1_to_ascii_map[scancode];
+                }
             }
-            framebuffer_write(cursor.row, cursor.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
-            if (cursor.col == maxCol + 1){
-                maxCol++;
-            }
-            cursor.col++;
-            if (cursor.col >= 80){
-                cursor.col = 0;
-                cursor.row++;
-                maxCol = 0;
+            if (keyboard_state.keyboard_buffer != 0x0){
+                framebuffer_write(c.row, c.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
+                framebuffer_write(c.row, c.col+1, 0, 0xF, 0);
+                if (c.col == maxCol + 1){
+                    maxCol++;
+                }
+                c.col++;
+                if (c.col >= 80){
+                    c.col = 0;
+                    c.row++;
+                    if (c.row > maxRow){
+                        maxRow = c.row;
+                    }
+                    maxCol = 0;
+                }
             }
         }
-        framebuffer_set_cursor(cursor.row, cursor.col);
+        framebuffer_set_cursor(c.row, c.col);
         
         // Mengakui interrupt dari PIC
         pic_ack(1);
