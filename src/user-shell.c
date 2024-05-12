@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "header/filesystem/fat32.h"
 #include "header/text/framebuffer.h"
+#include "header/stdlib/string.h"
 
 #define BLACK 0x00
 #define DARK_BLUE 0x01
@@ -25,6 +26,7 @@
 //     return 0;
 // }
 
+void executeCommand(char* command, uint32_t length);
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("mov %0, %%ebx" : /* <Empty> */ : "r"(ebx));
@@ -54,13 +56,6 @@ int strcmp(char* s1, char* s2) {
   }
   return s1[i] - s2[i];
 }
-
-void run_command(char* command){
-    if (strcmp(command, "clear") == 0){
-        syscall(8, 0, 0, 0);
-    }
-}
-
 
 int main(void) {
 
@@ -93,8 +88,8 @@ int main(void) {
         else if (keyboard_input == '\n') {
             syscall(6, (uint32_t) "\n", 1, WHITE);
 
+            executeCommand(buf, i);
             i = 0;
-            run_command(buf);
 
             for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
                 buf[j] = 0;
@@ -108,4 +103,61 @@ int main(void) {
     }
 
     return 0;
+}
+
+void executeCommand(char* command, uint32_t length){
+    char* CD = "cd ";
+    char* LS = "ls ";
+    char* MKDIR = "mkdir ";
+    char* CAT = "cat ";
+    char* CP = "cp ";
+    char* RM = "rm ";
+    char* MV = "mv ";
+    char* FIND = "find ";
+
+    // char buf[11] = "cd detected";
+    // syscall(6, (uint32_t) "masuk", 5, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
+
+    if (memcmp(command, LS, 2) == 0){
+            syscall(6, (uint32_t) "ls detected", 11, WHITE);
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+        }
+
+    if (length > 3){
+        if (memcmp(command, CD, 3) == 0){
+            syscall(6, (uint32_t) "cd detected", 11, WHITE);
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+        } else if (memcmp(command, CP, 3) == 0){
+            syscall(6, (uint32_t) "cp detected", 11, WHITE);
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+        } else if (memcmp(command, RM, 3) == 0){
+            syscall(6, (uint32_t) "rm detected", 11, WHITE);
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+        } else if (memcmp(command, MV, 3) == 0){
+            syscall(6, (uint32_t) "mv detected", 11, WHITE);
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+        }
+
+        if (length > 4){
+            if (memcmp(command, CAT, 4) == 0){
+                syscall(6, (uint32_t) "cat detected", 12, WHITE);
+                syscall(6, (uint32_t) "\n", 1, WHITE);
+            }
+        }
+
+        if (length > 5){
+            if (memcmp(command, FIND, 5) == 0){
+                syscall(6, (uint32_t) "find detected", 13, WHITE);
+                syscall(6, (uint32_t) "\n", 1, WHITE);
+            }
+        }
+
+        if (length > 6){
+            if (memcmp(command, MKDIR, 6) == 0){
+                syscall(6, (uint32_t) "mkdir detected", 14, WHITE);
+                syscall(6, (uint32_t) "\n", 1, WHITE);
+            }
+        }
+    }
 }
