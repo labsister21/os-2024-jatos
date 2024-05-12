@@ -95,7 +95,7 @@ void syscall(struct InterruptFrame frame) {
             break;
         case 5:
             /*put char*/
-            if (frame.cpu.general.ebx >= 32 && frame.cpu.general.ebx <= 127){
+            if ((frame.cpu.general.ebx >= 32 && frame.cpu.general.ebx <= 127) || frame.cpu.general.ebx == 0x0){
                 putchar(frame.cpu.general.ebx,4); // Assuming putc() exist in kernel
             }
             break;
@@ -111,6 +111,9 @@ void syscall(struct InterruptFrame frame) {
             /* activate keyboard interupt*/
             keyboard_state_activate();
             break;
+        case 8:
+            /* clear screen */
+            framebuffer_clear();
     }
 }
 

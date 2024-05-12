@@ -44,6 +44,23 @@ void print_terminal_text(char* curent_path){
     syscall(6, (uint32_t) "$ ", 2, GRAY);
 }
 
+int strcmp(char* s1, char* s2) {
+  int i = 0;
+  while (s1[i] == s2[i]) {
+    if (s1[i] == '\0') {
+      return 0;
+    }
+    i++;
+  }
+  return s1[i] - s2[i];
+}
+
+void run_command(char* command){
+    if (strcmp(command, "clear") == 0){
+        syscall(8, 0, 0, 0);
+    }
+}
+
 
 int main(void) {
 
@@ -56,19 +73,12 @@ int main(void) {
     for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
         buf[i] = 0;
     }
-    int i = 0;
 
+    int i = 0;
     char keyboard_input = 0;
 
- 
     while (true) {
         syscall(4, (uint32_t) &keyboard_input, 0, 0);
-
-        // if (keyboard_input != '0'){
-        //     syscall(5, (uint32_t) &keyboard_input, 1, WHITE);
-        //     syscall(5, (uint32_t) &keyboard_input, 1, WHITE);    
-        // }
-        // // syscall(6, (uint32_t)buf, i, WHITE);
 
         if (keyboard_input == 0){
             continue;
@@ -76,17 +86,20 @@ int main(void) {
             if (i > 0){
                 i--;
                 buf[i] = 0;
+            } else {
+                syscall(6, (uint32_t) "", 0, 0);
             }
         }
         else if (keyboard_input == '\n') {
             syscall(6, (uint32_t) "\n", 1, WHITE);
-            syscall(6, (uint32_t) "Input: ", 7, GRAY);
-            syscall(6, (uint32_t) buf, i, WHITE);
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+
             i = 0;
+            run_command(buf);
+
             for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
                 buf[j] = 0;
             }
+
             print_terminal_text(current_path);
         } else {
             buf[i] = keyboard_input;
