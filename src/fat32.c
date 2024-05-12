@@ -330,6 +330,7 @@ int8_t write(struct FAT32DriverRequest request){
                             if(driver_state.dir_table_buf.table[j].user_attribute != UATTR_NOT_EMPTY){
                                 driver_state.dir_table_buf.table[j] = new_entry;
                                 slotAvailable = 1;
+                                write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
                                 break;
                             }
                         }
@@ -338,11 +339,15 @@ int8_t write(struct FAT32DriverRequest request){
                         }
                     }
 
+                    // cluster yang target nulis kita memset 0
                     struct ClusterBuffer buf_text;
                     memset(buf_text.buf, 0, CLUSTER_SIZE);
                     write_clusters(&buf_text, i, 1);
-                    if (written == clusterNeed || clusterNeed == 1){
-                        memset(request.buf+(written * CLUSTER_SIZE)+request.buffer_size, i, CLUSTER_SIZE-request.buffer_size);
+
+
+                    // loop terakhir
+                    if (written+1 == clusterNeed){
+                        memset(request.buf+(written * CLUSTER_SIZE)+(request.buffer_size-written * CLUSTER_SIZE), i, CLUSTER_SIZE*(written+1)-request.buffer_size);
                     }
                     write_clusters(request.buf+(written * CLUSTER_SIZE), i, 1);
 
@@ -350,11 +355,10 @@ int8_t write(struct FAT32DriverRequest request){
                         driver_state.fat_table.cluster_map[clustBefore] = i;
                     }
                     
-                    if (written == clusterNeed || clusterNeed == 1){
+                    if (written+1 == clusterNeed){
                         driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
 
                         write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
-                        write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
                         written++;
                         break;
                     }

@@ -161,6 +161,17 @@ void kernel_setup(void) {
     };
     read(request);
 
+    // char text[4097];
+    // memset(text, 'P', 4097);
+    // struct FAT32DriverRequest request2 = {
+    //     .buf                   = text,
+    //     .name                  = "text4\0\0\0",
+    //     .ext                   = "\0\0\0",
+    //     .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    //     .buffer_size           = 4097,
+    // };
+    // write(request2);
+
     // Set TSS $esp pointer and jump into shell 
     set_tss_kernel_current_stack();
     kernel_execute_user_program((uint8_t*) 0);

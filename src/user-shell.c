@@ -114,6 +114,7 @@ void executeCommand(char* command, uint32_t length){
     char* RM = "rm ";
     char* MV = "mv ";
     char* FIND = "find ";
+    char* CLEAR = "clear";
 
     // char buf[11] = "cd detected";
     // syscall(6, (uint32_t) "masuk", 5, WHITE);
@@ -143,6 +144,10 @@ void executeCommand(char* command, uint32_t length){
             if (memcmp(command, CAT, 4) == 0){
                 syscall(6, (uint32_t) "cat detected", 12, WHITE);
                 syscall(6, (uint32_t) "\n", 1, WHITE);
+            }
+            else if (memcmp(command, CLEAR, 5) == 0){
+                syscall(8, 0, 0, 0);
+            
             }
         }
 
