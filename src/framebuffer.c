@@ -60,5 +60,6 @@ void puts(char* str, char count, char color) {
             cursor.col++;
         }
     }
+    framebuffer_write(cursor.row, cursor.col, 0x0, 0xF, 0);
     framebuffer_set_cursor(cursor.row, cursor.col);
 }

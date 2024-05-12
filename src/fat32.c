@@ -159,17 +159,17 @@ int8_t read_directory(struct FAT32DriverRequest request){
         return -1;
     }
 
-    struct FAT32DirectoryTable *dir_table;
+    struct FAT32DirectoryTable dir_table;
     read_clusters(&dir_table, request.parent_cluster_number, 1);
 
     for (int i = 0; i < (CLUSTER_SIZE / 32); i++){
-        if (memcmp(dir_table->table[i].name, request.name, 8) == 0){
-            if (dir_table->table[i].ext[0] != '\0'){ 
+        if (memcmp(dir_table.table[i].name, request.name, 8) == 0){
+            if (dir_table.table[i].ext[0] != '\0'){ 
                 // request bukan folder
                 return 1;
             } else {
                 // request adalah folder
-                uint32_t clust_number = dir_table->table[i].cluster_low | (dir_table->table[i].cluster_high << 16);
+                uint32_t clust_number = dir_table.table[i].cluster_low | (dir_table.table[i].cluster_high << 16);
                 read_clusters(request.buf, clust_number, 1);
                 return 0;
             }
@@ -338,6 +338,12 @@ int8_t write(struct FAT32DriverRequest request){
                         }
                     }
 
+                    struct ClusterBuffer buf_text;
+                    memset(buf_text.buf, 0, CLUSTER_SIZE);
+                    write_clusters(&buf_text, i, 1);
+                    if (written == clusterNeed || clusterNeed == 1){
+                        memset(request.buf+(written * CLUSTER_SIZE)+request.buffer_size, i, CLUSTER_SIZE-request.buffer_size);
+                    }
                     write_clusters(request.buf+(written * CLUSTER_SIZE), i, 1);
 
                     if (written > 0){
@@ -346,6 +352,7 @@ int8_t write(struct FAT32DriverRequest request){
                     
                     if (written == clusterNeed || clusterNeed == 1){
                         driver_state.fat_table.cluster_map[i] = FAT32_FAT_END_OF_FILE;
+
                         write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
                         write_clusters(&driver_state.dir_table_buf, request.parent_cluster_number, 1);
                         written++;

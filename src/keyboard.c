@@ -90,11 +90,11 @@ void keyboard_isr(void) {
     static bool isShift = false;
     static bool isCapsLock = false;
     static int maxCol = -1;
-    // TODO : Implement scancode processing
-    // if(keyboard_state.keyboard_input_on){
-    //   keyboard_state.keyboard_buffer = keyboard_scancode_1_to_ascii_map[scancode];
-    //   pic_ack(1);
-    // }
+    if (framebuffer_get_cursor().col != 0){
+        maxCol = framebuffer_get_cursor().col;
+    }
+    // static int latestMaxCol = 0;
+    static int maxRow = 0;
 
     // Memeriksa apakah scancode adalah capslock
     if ((scancode == 0x3a) && (!isCapsLock)){ // Capslock on
@@ -119,29 +119,44 @@ void keyboard_isr(void) {
 
     struct Cursor cursor = framebuffer_get_cursor();
 
-    if (keyboard_state.keyboard_input_on) {
-        // Memeriksa apakah scancode merupakan tombol "delete" / "left arrow key" / "right arrow key"
+    if (keyboard_state.keyboard_input_on && scancode < 0x80) {
+   
         if (scancode == 0xe) { // backspace
-            keyboard_state.keyboard_buffer = 0x0;
-            if (cursor.col >= 0){
-                framebuffer_write(cursor.row, cursor.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
+            keyboard_state.keyboard_buffer = '\b';
+            if ((cursor.col > 0) && (cursor.col <= 79)){
+                framebuffer_write(cursor.row, cursor.col-1, 0x0, 0xF, 0x0);
                 if (cursor.col > 0){
                     cursor.col--;
+                    if (cursor.col >= maxCol){
+                        maxCol--;
+                    }
                 }
-                if (cursor.col == 79){
-                    maxCol = cursor.col;
+            } else {
+                if (cursor.row > 0){
+                    cursor.row--;
+                    cursor.col = 79;
+                    framebuffer_write(cursor.row, cursor.col, 0x0, 0xF, 0x0);
                 }
             }
         } else if (scancode == 0x4b){ // left arrow
-            keyboard_state.keyboard_buffer = 0x1F;
-            if (cursor.col > 0){
-                cursor.col--;
-            }
+            keyboard_state.keyboard_buffer = 0x0;
+            pic_ack(1);
+            return;
+
         } else if (scancode == 0x4d){ // right arrow
-            keyboard_state.keyboard_buffer = 0x1E;
-            if (cursor.col < maxCol){
-                cursor.col++;
+            keyboard_state.keyboard_buffer = 0x0;
+            pic_ack(1);
+            return;
+     
+        } else if (scancode == 0x1c) {
+            keyboard_state.keyboard_buffer = '\n';
+            cursor.col = 0;
+            cursor.row++;
+            if (cursor.row > maxRow){
+                maxRow = cursor.row;
             }
+            maxCol = 0;
+        
         } else {
             // Memasukkan karakter sesuai dengan map scancode to ASCII ke dalam buffer
             if ((isShift) && (!isCapsLock)){ // Jika shift tetapi bukan capslock
@@ -153,22 +168,32 @@ void keyboard_isr(void) {
             } else { // Jika bukan shift dan bukan capslock
                 keyboard_state.keyboard_buffer = keyboard_scancode_1_to_ascii_map[scancode];
             }
-            framebuffer_write(cursor.row, cursor.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
-            if (cursor.col == maxCol + 1){
-                maxCol++;
+
+            if (scancode != 0x0 && keyboard_state.keyboard_buffer == 0x0 ){
+                pic_ack(1);
+                return;
             }
+            
+            framebuffer_write(cursor.row, cursor.col, keyboard_state.keyboard_buffer, 0xF, 0x0);
+  
             cursor.col++;
             if (cursor.col >= 80){
                 cursor.col = 0;
                 cursor.row++;
+                if (cursor.row > maxRow){
+                    maxRow = cursor.row;
+                }
                 maxCol = 0;
-            }
+                }
+
         }
+        framebuffer_write(cursor.row, cursor.col, 0x0, 0xF, 0x0);
         framebuffer_set_cursor(cursor.row, cursor.col);
         
         // Mengakui interrupt dari PIC
         pic_ack(1);
     }
+    pic_ack(1);
     
 }
 
@@ -182,8 +207,10 @@ void keyboard_state_deactivate(void) {
 }
 
 void get_keyboard_buffer(char *buf) {
-    *buf = keyboard_state.keyboard_buffer;
+    // *buf = keyboard_state.keyboard_buffer;
+    memcpy(buf, (void *) &keyboard_state.keyboard_buffer, 1);
     keyboard_state.keyboard_buffer = 0;
+    // framebuffer_write(0, 0, *buf, 0xF, 0x0);
 }
 
     
