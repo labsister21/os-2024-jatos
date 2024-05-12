@@ -18,8 +18,7 @@
 #define LIGHT_PURPLE 0x0D
 #define YELLOW 0x0E
 #define WHITE 0x0F
-
-
+#define KEYBOARD_BUFFER_SIZE 256
 
 // int main(void) {
 //     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
@@ -37,30 +36,63 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("int $0x30");
 }
 
+void print_terminal_text(char* curent_path){
+
+    syscall(6, (uint32_t) "JatOS-IF2230", 12, GREEN);
+    syscall(6, (uint32_t) ":", 1, GRAY);
+    syscall(6, (uint32_t) curent_path, 1, BLUE);
+    syscall(6, (uint32_t) "$ ", 2, GRAY);
+}
+
+
 int main(void) {
-    struct ClusterBuffer      cl[2]   = {0};
-    struct FAT32DriverRequest request = {
-        .buf                   = &cl,
-        .name                  = "shell",
-        .ext                   = "\0\0\0",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = CLUSTER_SIZE,
-    };
-   
-    
-    int32_t retcode;
-    syscall(0, (uint32_t) &request, (uint32_t) &retcode, 0);
-    // if (retcode == 0)
-    //     syscall(6, (uint32_t) "owo\n", 4, WHITE);
 
-    char buf;
     syscall(7, 0, 0, 0);
-    while (true) {
-        // syscall(4, (uint32_t) &buf, 0, 0);
 
-        // syscall(5, (uint32_t) &buf, 0xF, 0);
+    char* current_path = "/";
+    print_terminal_text(current_path);
+
+    char buf[KEYBOARD_BUFFER_SIZE];
+    for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
+        buf[i] = 0;
+    }
+    int i = 0;
+
+    char keyboard_input = 0;
+
+ 
+    while (true) {
+        syscall(4, (uint32_t) &keyboard_input, 0, 0);
+
+        // if (keyboard_input != '0'){
+        //     syscall(5, (uint32_t) &keyboard_input, 1, WHITE);
+        //     syscall(5, (uint32_t) &keyboard_input, 1, WHITE);    
+        // }
+        // // syscall(6, (uint32_t)buf, i, WHITE);
+
+        if (keyboard_input == 0){
+            continue;
+        } else if (keyboard_input == '\b'){
+            if (i > 0){
+                i--;
+                buf[i] = 0;
+            }
+        }
+        else if (keyboard_input == '\n') {
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+            syscall(6, (uint32_t) "Input: ", 7, GRAY);
+            syscall(6, (uint32_t) buf, i, WHITE);
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+            i = 0;
+            for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
+                buf[j] = 0;
+            }
+            print_terminal_text(current_path);
+        } else {
+            buf[i] = keyboard_input;
+            i++;
+        }
     }
 
     return 0;
 }
-

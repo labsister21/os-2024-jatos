@@ -4,6 +4,7 @@
 #include "header/cpu/gdt.h"
 #include "header/filesystem/fat32.h"
 #include "header/text/framebuffer.h"
+#include "header/stdlib/string.h"
 
 
 
@@ -71,7 +72,7 @@ void syscall(struct InterruptFrame frame) {
             break;
         case 1:
             /*read directory*/
-            *((int8_t*) frame.cpu.general.ecx) = read(
+            *((int8_t*) frame.cpu.general.ecx) = read_directory(
                 *(struct FAT32DriverRequest*) frame.cpu.general.ebx
             );
             break;
@@ -88,25 +89,26 @@ void syscall(struct InterruptFrame frame) {
             );
             break;
         case 4:
+            /*get keyboard interup*/
+
             get_keyboard_buffer((char*) frame.cpu.general.ebx);
-            // if(buf == 0)
-            // {
-            //     ls()
-            // }
             break;
         case 5:
+            /*put char*/
             if (frame.cpu.general.ebx >= 32 && frame.cpu.general.ebx <= 127){
                 putchar(frame.cpu.general.ebx,4); // Assuming putc() exist in kernel
             }
             break;
         case 6:
+            /* puts*/
             puts(
                 (char*) frame.cpu.general.ebx, 
                 frame.cpu.general.ecx, 
                 frame.cpu.general.edx
-            ); // Assuming puts() exist in kernel
+            );
             break;
         case 7: 
+            /* activate keyboard interupt*/
             keyboard_state_activate();
             break;
     }

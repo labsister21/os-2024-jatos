@@ -143,6 +143,7 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_write(0, 0, 0, 0xF, 0);
     framebuffer_set_cursor(0, 0);
+    framebuffer_write(0, 0, 0x0, 0xF, 0x0);
     initialize_filesystem_fat32();
     gdt_install_tss();
     set_tss_register();
