@@ -50,7 +50,7 @@ void print_terminal_text(char* curent_path){
     syscall(6, (uint32_t) "$ ", 2, GRAY);
 }
 
-void list_files(){
+void ls(){
 
     struct FAT32DirectoryTable dir_table;
 
@@ -124,7 +124,7 @@ void cat(char* filename){
     syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
 
     if (retcode != 0){
-        syscall(6, (uint32_t) "cat gagal\n", 10, WHITE);
+        syscall(6, (uint32_t) "dir table corrupt\n", 17, WHITE);
         return;
     } 
 
@@ -144,7 +144,7 @@ void cat(char* filename){
     }
 
     if (clust_number == 0){
-        syscall(6, (uint32_t) "File not found\n", 15, WHITE);
+        syscall(6, (uint32_t) "file tidak tersedia\n", 19, WHITE);
         return;
     } 
 
@@ -152,12 +152,16 @@ void cat(char* filename){
     // syscall(6, (uint32_t) clust_number, 2, WHITE); <-- buffer overflow, ngerusak return addr
 
     // uint8_t read_buffer[292];
-    uint8_t read_buffer[file_size];
+    int req_size = CLUSTER_SIZE;
+    while (req_size < file_size){
+        req_size += CLUSTER_SIZE;
+    }
+    uint8_t read_buffer[req_size];
 
     struct FAT32DriverRequest request_read = {
         .buf = &read_buffer,
         .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
-        .buffer_size = file_size,
+        .buffer_size = req_size,
     };
 
     for (int i = 0; i < 8; i++) {
@@ -168,11 +172,54 @@ void cat(char* filename){
     syscall(0, (uint32_t)&request_read, (uint32_t)&retcode, 0);
 
     if (retcode != 0){
-        syscall(6, (uint32_t) "read gagal\n", 11, WHITE);
+        syscall(6, (uint32_t) "bukan file\n", 11, WHITE);
         return;
     }
 
     syscall(6, (uint32_t) read_buffer, (uint32_t) file_size, WHITE);
+    syscall(6, (uint32_t) "\n", 1, WHITE);
+}
+
+void mkdir(char* foldername){
+
+    // syscall(6, (uint32_t) "mkdir\n", 6, WHITE);
+    // syscall(6, (uint32_t) foldername, 8, WHITE);
+    struct FAT32DirectoryTable dir_table;
+    struct FAT32DriverRequest request = {
+        .buf = &dir_table,
+        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
+        .ext = "",
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = sizeof(struct FAT32DirectoryTable),
+    };
+    
+
+    int8_t retcode;
+    syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "dir table corrupt\n", 17, WHITE);
+        return;
+    } 
+
+    struct FAT32DriverRequest request_write = {
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = 0,
+    };
+
+    for (int i = 0; i < 8; i++) {
+        request_write.name[i] = foldername[i];
+    }
+
+    syscall(2, (uint32_t)&request_write, (uint32_t)&retcode, 0);
+
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "gagal\n", 6, WHITE);
+        return;
+    }
+
+    syscall(6, (uint32_t) "sukses!", 7, WHITE);
     syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
@@ -240,7 +287,7 @@ void executeCommand(char* command, uint32_t length){
     // syscall(6, (uint32_t) "\n", 1, WHITE);
 
     if (memcmp(command, LS, 2) == 0){
-            list_files();
+            ls();
         }
 
     if (length > 3){
@@ -287,9 +334,13 @@ void executeCommand(char* command, uint32_t length){
 
         if (length > 6){
             if (memcmp(command, MKDIR, 6) == 0){
-                syscall(6, (uint32_t) "mkdir detected", 14, WHITE);
-                syscall(6, (uint32_t) "\n", 1, WHITE);
 
+                char foldername[length-6];
+                memcpy(foldername, command + 6, length-6);
+                memset(foldername + length-6, '\0', 14-length);
+
+                mkdir(foldername);
+                
                 return;
             }
         }
