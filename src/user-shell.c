@@ -231,10 +231,8 @@ void mkdir(char* foldername){
     // syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
-<<<<<<< HEAD
 void rm(char* filename){
     
-
     // syscall(6, (uint32_t) "meoww ", 6, WHITE);
     // syscall(6, (uint32_t) filename, 8, WHITE);
     // syscall(6, (uint32_t) "\n", 1, WHITE);
@@ -305,56 +303,54 @@ void rm(char* filename){
 }
 
 
-int main(void) {
+// int main(void) {
 
-    syscall(7, 0, 0, 0);
+//     syscall(7, 0, 0, 0);
 
-    char* current_path = "/";
-    print_terminal_text(current_path);
+//     char* current_path = "/";
+//     print_terminal_text(current_path);
 
-    char buf[KEYBOARD_BUFFER_SIZE];
-    for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
-        buf[i] = 0;
-    }
+//     char buf[KEYBOARD_BUFFER_SIZE];
+//     for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
+//         buf[i] = 0;
+//     }
 
-    int i = 0;
-    char keyboard_input = 0;
+//     int i = 0;
+//     char keyboard_input = 0;
 
-    while (true) {
-        syscall(4, (uint32_t) &keyboard_input, 0, 0);
+//     while (true) {
+//         syscall(4, (uint32_t) &keyboard_input, 0, 0);
 
-        if (keyboard_input == 0){
-            continue;
-        } else if (keyboard_input == '\b'){
-            if (i > 0){
-                i--;
-                buf[i] = 0;
-            } else {
-                syscall(6, (uint32_t) "", 0, 0);
-            }
-        }
-        else if (keyboard_input == '\n') {
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+//         if (keyboard_input == 0){
+//             continue;
+//         } else if (keyboard_input == '\b'){
+//             if (i > 0){
+//                 i--;
+//                 buf[i] = 0;
+//             } else {
+//                 syscall(6, (uint32_t) "", 0, 0);
+//             }
+//         }
+//         else if (keyboard_input == '\n') {
+//             syscall(6, (uint32_t) "\n", 1, WHITE);
 
-            executeCommand(buf, i);
-            i = 0;
+//             executeCommand(buf, i);
+//             i = 0;
 
-            for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
-                buf[j] = 0;
-            }
+//             for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
+//                 buf[j] = 0;
+//             }
 
-            print_terminal_text(current_path);
-        } else {
-            buf[i] = keyboard_input;
-            i++;
-        }
-    }
+//             print_terminal_text(current_path);
+//         } else {
+//             buf[i] = keyboard_input;
+//             i++;
+//         }
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
-=======
->>>>>>> 184b670f9ce7b6bf0f24ed5b691d16e3ba6a8d46
 void executeCommand(char* command, uint32_t length){
     char* CD = "cd ";
     char* LS = "ls ";
@@ -472,6 +468,8 @@ int main(void) {
     int i = 0;
     char keyboard_input = 0;
 
+    syscall(8, 0, 0, 0);
+    print_terminal_text();
     while (true) {
         syscall(4, (uint32_t) &keyboard_input, 0, 0);
 
