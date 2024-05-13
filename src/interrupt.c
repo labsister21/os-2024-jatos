@@ -103,7 +103,7 @@ void syscall(struct InterruptFrame frame) {
             /* puts*/
             puts(
                 (char*) frame.cpu.general.ebx, 
-                frame.cpu.general.ecx, 
+                (uint32_t) frame.cpu.general.ecx, 
                 frame.cpu.general.edx
             );
             break;

@@ -52,7 +52,7 @@ struct Cursor framebuffer_get_cursor();
 void framebuffer_clear(void);
 
 void putchar(char ebx, char ecx);
-void puts(char* ebx, char ecx, char edx);
+void puts(char* ebx, uint32_t ecx, char edx);
 
 
 

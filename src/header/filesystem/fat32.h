@@ -34,6 +34,9 @@
 #define ATTR_SUBDIRECTORY     0b00010000
 #define UATTR_NOT_EMPTY       0b10101010
 
+#define ATR_FILE              0b00000000
+#define ATR_DIRECTORY         0b00010000
+
 
 
 // Boot sector signature for this file system "FAT32 - IF2230 edition"
