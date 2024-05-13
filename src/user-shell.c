@@ -23,14 +23,13 @@
 
 int CURRENT_DIR_CLUSTER_NUMBER  = 2;
 int CURRENT_DIR_PARENT_CLUSTER_NUMBER  = 2;
-char CURRENT_DIR_NAME[8] = "root\0\0\0\0";
+int depth = 0;
+char DIR_PATH[10][8];
 
 // int main(void) {
 //     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
 //     return 0;
 // }
-
-void executeCommand(char* command, uint32_t length);
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("mov %0, %%ebx" : /* <Empty> */ : "r"(ebx));
@@ -42,11 +41,20 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("int $0x30");
 }
 
-void print_terminal_text(char* curent_path){
+void print_terminal_text(){
 
     syscall(6, (uint32_t) "JatOS-IF2230", 12, GREEN);
     syscall(6, (uint32_t) ":", 1, GRAY);
-    syscall(6, (uint32_t) curent_path, 1, BLUE);
+    // syscall(6, (uint32_t) curent_path, 1, BLUE);
+    int currDepth = depth;
+    for (int i = 1; i <= currDepth; i++){
+        int dirLen = 0;
+        while (!(memcmp(&DIR_PATH[i][dirLen], "\0", 1) == 0)){
+            dirLen++;
+        }
+        syscall(6, (uint32_t) "/", 1, BLUE);
+        syscall(6, (uint32_t) DIR_PATH[i], dirLen, BLUE);
+    }
     syscall(6, (uint32_t) "$ ", 2, GRAY);
 }
 
@@ -223,54 +231,6 @@ void mkdir(char* foldername){
     syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
-int main(void) {
-
-    syscall(7, 0, 0, 0);
-
-    char* current_path = "/";
-    print_terminal_text(current_path);
-
-    char buf[KEYBOARD_BUFFER_SIZE];
-    for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
-        buf[i] = 0;
-    }
-
-    int i = 0;
-    char keyboard_input = 0;
-
-    while (true) {
-        syscall(4, (uint32_t) &keyboard_input, 0, 0);
-
-        if (keyboard_input == 0){
-            continue;
-        } else if (keyboard_input == '\b'){
-            if (i > 0){
-                i--;
-                buf[i] = 0;
-            } else {
-                syscall(6, (uint32_t) "", 0, 0);
-            }
-        }
-        else if (keyboard_input == '\n') {
-            syscall(6, (uint32_t) "\n", 1, WHITE);
-
-            executeCommand(buf, i);
-            i = 0;
-
-            for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
-                buf[j] = 0;
-            }
-
-            print_terminal_text(current_path);
-        } else {
-            buf[i] = keyboard_input;
-            i++;
-        }
-    }
-
-    return 0;
-}
-
 void executeCommand(char* command, uint32_t length){
     char* CD = "cd ";
     char* LS = "ls ";
@@ -345,4 +305,54 @@ void executeCommand(char* command, uint32_t length){
             }
         }
     }
+}
+
+int main(void) {
+
+    syscall(7, 0, 0, 0);
+
+    memcpy(DIR_PATH[0], "root\0\0\0\0", 8);
+    memcpy(DIR_PATH[1], "test\0\0\0\0", 8);
+    depth = 1;
+    print_terminal_text();
+
+    char buf[KEYBOARD_BUFFER_SIZE];
+    for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
+        buf[i] = 0;
+    }
+
+    int i = 0;
+    char keyboard_input = 0;
+
+    while (true) {
+        syscall(4, (uint32_t) &keyboard_input, 0, 0);
+
+        if (keyboard_input == 0){
+            continue;
+        } else if (keyboard_input == '\b'){
+            if (i > 0){
+                i--;
+                buf[i] = 0;
+            } else {
+                syscall(6, (uint32_t) "", 0, 0);
+            }
+        }
+        else if (keyboard_input == '\n') {
+            syscall(6, (uint32_t) "\n", 1, WHITE);
+
+            executeCommand(buf, i);
+            i = 0;
+
+            for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
+                buf[j] = 0;
+            }
+
+            print_terminal_text();
+        } else {
+            buf[i] = keyboard_input;
+            i++;
+        }
+    }
+
+    return 0;
 }
