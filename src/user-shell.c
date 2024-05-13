@@ -21,6 +21,10 @@
 #define WHITE 0x0F
 #define KEYBOARD_BUFFER_SIZE 256
 
+int CURRENT_DIR_CLUSTER_NUMBER  = 2;
+int CURRENT_DIR_PARENT_CLUSTER_NUMBER  = 2;
+char CURRENT_DIR_NAME[8] = "root\0\0\0\0";
+
 // int main(void) {
 //     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
 //     return 0;
@@ -46,15 +50,130 @@ void print_terminal_text(char* curent_path){
     syscall(6, (uint32_t) "$ ", 2, GRAY);
 }
 
-int strcmp(char* s1, char* s2) {
-  int i = 0;
-  while (s1[i] == s2[i]) {
-    if (s1[i] == '\0') {
-      return 0;
+void list_files(){
+
+    struct FAT32DirectoryTable dir_table;
+
+    struct FAT32DriverRequest request = {
+        .buf = &dir_table,
+        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
+        .ext = "",
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = sizeof(struct FAT32DirectoryTable),
+    };
+
+    int8_t retcode;
+    syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "ls gagal\n", 9, WHITE);
+        return;
+    } 
+
+    for (int i = 0; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+        
+        struct FAT32DirectoryEntry entry = dir_table.table[i];
+        if (entry.name[0] == 0){
+            continue;
+        }
+        int name_length = 0;
+        for (int j = 0; j < 8; j++){
+            if (entry.name[j] == '\0'){
+                break;
+            }
+            name_length++;
+        }
+        if (i == 0){
+            syscall(6, (uint32_t) entry.name, name_length, DARK_GREEN);
+            syscall(6, (uint32_t) "/ ", 2, DARK_GREEN);
+        }
+        else if (entry.attribute == ATR_DIRECTORY){
+            syscall(6, (uint32_t) entry.name, name_length, WHITE);
+            syscall(6, (uint32_t) "/ ", 2, WHITE);
+        } else {
+            syscall(6, (uint32_t) entry.name, name_length, WHITE);
+            if (entry.ext[0] != '\0'){
+                syscall(6, (uint32_t) ".", 1, WHITE);
+                syscall(6, (uint32_t) entry.ext, 3, WHITE);
+            }
+            syscall(6, (uint32_t) " ", 1, WHITE);
+
+            syscall(6, (uint32_t) " ", 1, WHITE);
+        }
     }
-    i++;
-  }
-  return s1[i] - s2[i];
+    syscall(6, (uint32_t) "\n", 1, WHITE);
+}
+
+void cat(char* filename){
+    
+
+    // syscall(6, (uint32_t) "meoww ", 6, WHITE);
+    // syscall(6, (uint32_t) filename, 8, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
+
+    struct FAT32DirectoryTable dir_table;
+    struct FAT32DriverRequest request = {
+        .buf = &dir_table,
+        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
+        .ext = "",
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = sizeof(struct FAT32DirectoryTable),
+    };
+
+    int8_t retcode;
+    syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "cat gagal\n", 10, WHITE);
+        return;
+    } 
+
+
+    uint32_t clust_number = 0;
+    // struct FAT32DirectoryEntry read_entry;
+
+    int file_size = 0;
+
+    for (int i = 0; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+        struct FAT32DirectoryEntry entry = dir_table.table[i];
+        if (memcmp(entry.name, filename, 8) == 0){
+            clust_number = entry.cluster_low | (entry.cluster_high << 16);
+            file_size = entry.filesize;
+            break;
+        }
+    }
+
+    if (clust_number == 0){
+        syscall(6, (uint32_t) "File not found\n", 15, WHITE);
+        return;
+    } 
+
+    // syscall(6, (uint32_t) "File found at cluster ", 22, WHITE);
+    // syscall(6, (uint32_t) clust_number, 2, WHITE); <-- buffer overflow, ngerusak return addr
+
+    // uint8_t read_buffer[292];
+    uint8_t read_buffer[file_size];
+
+    struct FAT32DriverRequest request_read = {
+        .buf = &read_buffer,
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = file_size,
+    };
+
+    for (int i = 0; i < 8; i++) {
+        request_read.name[i] = filename[i];
+    }
+
+
+    syscall(0, (uint32_t)&request_read, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "read gagal\n", 11, WHITE);
+        return;
+    }
+
+    syscall(6, (uint32_t) read_buffer, (uint32_t) file_size, WHITE);
+    syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
 int main(void) {
@@ -121,8 +240,7 @@ void executeCommand(char* command, uint32_t length){
     // syscall(6, (uint32_t) "\n", 1, WHITE);
 
     if (memcmp(command, LS, 2) == 0){
-            syscall(6, (uint32_t) "ls detected", 11, WHITE);
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+            list_files();
         }
 
     if (length > 3){
@@ -142,12 +260,19 @@ void executeCommand(char* command, uint32_t length){
 
         if (length > 4){
             if (memcmp(command, CAT, 4) == 0){
-                syscall(6, (uint32_t) "cat detected", 12, WHITE);
-                syscall(6, (uint32_t) "\n", 1, WHITE);
+
+                char filename[length-4];
+                memcpy(filename, command + 4, length-4);
+                memset(filename + length-4, '\0', 12-length);
+
+                cat(filename);
+
+                return;
             }
             else if (memcmp(command, CLEAR, 5) == 0){
                 syscall(8, 0, 0, 0);
-            
+
+                return;
             }
         }
 
@@ -155,6 +280,8 @@ void executeCommand(char* command, uint32_t length){
             if (memcmp(command, FIND, 5) == 0){
                 syscall(6, (uint32_t) "find detected", 13, WHITE);
                 syscall(6, (uint32_t) "\n", 1, WHITE);
+
+                return;
             }
         }
 
@@ -162,6 +289,8 @@ void executeCommand(char* command, uint32_t length){
             if (memcmp(command, MKDIR, 6) == 0){
                 syscall(6, (uint32_t) "mkdir detected", 14, WHITE);
                 syscall(6, (uint32_t) "\n", 1, WHITE);
+
+                return;
             }
         }
     }

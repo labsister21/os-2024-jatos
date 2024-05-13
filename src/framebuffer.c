@@ -47,14 +47,18 @@ void putchar(char c, char color) {
     framebuffer_write(cursor.row, cursor.col, c, color, 0);
 }
 
-void puts(char* str, char count, char color) {
-    for (int i = 0; i < count; i++) {
-        if (str[i] == '\n') {
+void puts(char* str, uint32_t count, char color) {
+    for (uint32_t i = 0; i < count; i++) {
+        if (str[i] == '\n')  {
             cursor.row++;
             cursor.col = 0;
         } else {
             putchar(str[i], color);
             cursor.col++;
+            if (cursor.col == 80) {
+                cursor.row++;
+                cursor.col = 0;
+            }
         }
     }
     framebuffer_write(cursor.row, cursor.col, 0x0, 0xF, 0);

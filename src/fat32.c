@@ -279,6 +279,7 @@ int8_t write(struct FAT32DriverRequest request){
 
                 struct FAT32DirectoryEntry new_entry;
                 new_entry.user_attribute = UATTR_NOT_EMPTY;
+                new_entry.attribute = ATR_DIRECTORY;
                 memcpy(&(new_entry.name), request.name, 8);
                 new_entry.cluster_high = (i >> 16) & 0xFFFF;
                 new_entry.cluster_low = i & 0xFFFF;
@@ -319,6 +320,7 @@ int8_t write(struct FAT32DriverRequest request){
                         struct FAT32DirectoryEntry new_entry;
                         memset(&new_entry, 0, sizeof(struct FAT32DirectoryEntry));
                         new_entry.user_attribute = UATTR_NOT_EMPTY;
+                        new_entry.attribute = ATR_FILE;
                         memcpy(&(new_entry.name), request.name, 8);
                         memcpy(&(new_entry.ext), request.ext, 3);
                         new_entry.cluster_high = (i >> 16) & 0xFFFF;
