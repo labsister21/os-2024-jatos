@@ -53,12 +53,12 @@ void puts(char* str, uint32_t count, char color) {
             cursor.row++;
             cursor.col = 0;
         } else {
-            putchar(str[i], color);
-            cursor.col++;
             if (cursor.col == 80) {
                 cursor.row++;
                 cursor.col = 0;
             }
+            putchar(str[i], color);
+            cursor.col++;
         }
     }
     framebuffer_write(cursor.row, cursor.col, 0x0, 0xF, 0);

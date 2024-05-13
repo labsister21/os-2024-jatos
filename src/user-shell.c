@@ -19,6 +19,7 @@
 #define LIGHT_PURPLE 0x0D
 #define YELLOW 0x0E
 #define WHITE 0x0F
+
 #define KEYBOARD_BUFFER_SIZE 256
 
 int CURRENT_DIR_CLUSTER_NUMBER  = 2;
@@ -85,20 +86,19 @@ void ls(){
         }
         if (i == 0){
             syscall(6, (uint32_t) entry.name, name_length, DARK_GREEN);
-            syscall(6, (uint32_t) "/ ", 2, DARK_GREEN);
+            syscall(6, (uint32_t) "/", 1, DARK_GREEN);
         }
         else if (entry.attribute == ATR_DIRECTORY){
+            syscall(6, (uint32_t) "  ", 2, WHITE);
             syscall(6, (uint32_t) entry.name, name_length, WHITE);
-            syscall(6, (uint32_t) "/ ", 2, WHITE);
+            syscall(6, (uint32_t) "/", 1, WHITE);
         } else {
+            syscall(6, (uint32_t) "  ", 2, WHITE);
             syscall(6, (uint32_t) entry.name, name_length, WHITE);
             if (entry.ext[0] != '\0'){
                 syscall(6, (uint32_t) ".", 1, WHITE);
                 syscall(6, (uint32_t) entry.ext, 3, WHITE);
             }
-            syscall(6, (uint32_t) " ", 1, WHITE);
-
-            syscall(6, (uint32_t) " ", 1, WHITE);
         }
     }
     syscall(6, (uint32_t) "\n", 1, WHITE);
@@ -144,7 +144,7 @@ void cat(char* filename){
     }
 
     if (clust_number == 0){
-        syscall(6, (uint32_t) "file tidak tersedia\n", 19, WHITE);
+        syscall(6, (uint32_t) "file tidak tersedia\n", 20, WHITE);
         return;
     } 
 
@@ -176,7 +176,7 @@ void cat(char* filename){
         return;
     }
 
-    syscall(6, (uint32_t) read_buffer, (uint32_t) file_size, WHITE);
+    syscall(6, (uint32_t) read_buffer, (uint32_t) file_size, GOLD);
     syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
@@ -219,9 +219,82 @@ void mkdir(char* foldername){
         return;
     }
 
-    syscall(6, (uint32_t) "sukses!", 7, WHITE);
-    syscall(6, (uint32_t) "\n", 1, WHITE);
+    // syscall(6, (uint32_t) "sukses!", 7, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
 }
+
+void rm(char* filename){
+    
+
+    // syscall(6, (uint32_t) "meoww ", 6, WHITE);
+    // syscall(6, (uint32_t) filename, 8, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
+
+    struct FAT32DirectoryTable dir_table;
+    struct FAT32DriverRequest request = {
+        .buf = &dir_table,
+        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
+        .ext = "",
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = sizeof(struct FAT32DirectoryTable),
+    };
+
+    int8_t retcode;
+    syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "dir table corrupt\n", 17, WHITE);
+        return;
+    } 
+
+
+    uint32_t clust_number = 0;
+    // struct FAT32DirectoryEntry read_entry;
+
+    for (int i = 0; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+        struct FAT32DirectoryEntry entry = dir_table.table[i];
+        if (memcmp(entry.name, filename, 8) == 0){
+            clust_number = entry.cluster_low | (entry.cluster_high << 16);
+            break;
+        }
+    }
+
+    if (clust_number == 0){
+        syscall(6, (uint32_t) "file tidak tersedia\n", 20, WHITE);
+        return;
+    } 
+
+    // syscall(6, (uint32_t) "File found at cluster ", 22, WHITE);
+    // syscall(6, (uint32_t) clust_number, 2, WHITE); <-- buffer overflow, ngerusak return addr
+
+    // uint8_t read_buffer[292];
+    // int req_size = CLUSTER_SIZE;
+    // while (req_size < file_size){
+    //     req_size += CLUSTER_SIZE;
+    // }
+    // uint8_t read_buffer[req_size];
+
+    struct FAT32DriverRequest request_delete = {
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .ext = "txt",
+    };
+
+    for (int i = 0; i < 8; i++) {
+        request_delete.name[i] = filename[i];
+    }
+
+
+    syscall(3, (uint32_t)&request_delete, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "bukan file\n", 11, WHITE);
+        return;
+    }
+
+    // syscall(6, (uint32_t) "sukses!", 7, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
+}
+
 
 int main(void) {
 
@@ -294,12 +367,26 @@ void executeCommand(char* command, uint32_t length){
         if (memcmp(command, CD, 3) == 0){
             syscall(6, (uint32_t) "cd detected", 11, WHITE);
             syscall(6, (uint32_t) "\n", 1, WHITE);
+
         } else if (memcmp(command, CP, 3) == 0){
             syscall(6, (uint32_t) "cp detected", 11, WHITE);
             syscall(6, (uint32_t) "\n", 1, WHITE);
+
         } else if (memcmp(command, RM, 3) == 0){
-            syscall(6, (uint32_t) "rm detected", 11, WHITE);
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+
+            if (length > 11){
+                syscall(6, (uint32_t) "nama file terlalu panjang\n", 26, WHITE);
+                return;
+            }
+            
+            char filename[length-3];
+            memcpy(filename, command + 3, length-3);
+            memset(filename + length-3, '\0', 11-length);
+
+            rm(filename);
+
+            return;
+
         } else if (memcmp(command, MV, 3) == 0){
             syscall(6, (uint32_t) "mv detected", 11, WHITE);
             syscall(6, (uint32_t) "\n", 1, WHITE);
@@ -307,6 +394,11 @@ void executeCommand(char* command, uint32_t length){
 
         if (length > 4){
             if (memcmp(command, CAT, 4) == 0){
+
+                if (length > 12){
+                    syscall(6, (uint32_t) "nama file terlalu panjang\n", 26, WHITE);
+                    return;
+                }
 
                 char filename[length-4];
                 memcpy(filename, command + 4, length-4);
@@ -334,6 +426,11 @@ void executeCommand(char* command, uint32_t length){
 
         if (length > 6){
             if (memcmp(command, MKDIR, 6) == 0){
+
+                if (length > 14){
+                    syscall(6, (uint32_t) "nama folder terlalu panjang\n", 28, WHITE);
+                    return;
+                }
 
                 char foldername[length-6];
                 memcpy(foldername, command + 6, length-6);
