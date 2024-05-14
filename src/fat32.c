@@ -52,6 +52,10 @@ void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uin
     new_entry->filesize = 0;
     
     dir_table->table[0] = *new_entry;
+
+    for (int i = 1; i < (CLUSTER_SIZE / 32); i++){
+        memset(&(dir_table->table[i]), 0, 32);
+    }
 }
 
 

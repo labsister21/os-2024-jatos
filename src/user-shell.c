@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include "header/filesystem/fat32.h"
-#include "header/text/framebuffer.h"
 #include "header/stdlib/string.h"
 
 #define BLACK 0x00
@@ -49,13 +48,17 @@ void print_terminal_text(){
     syscall(6, (uint32_t) ":", 1, GRAY);
     // syscall(6, (uint32_t) curent_path, 1, BLUE);
     int currDepth = DEPTH;
-    for (int i = 1; i <= currDepth; i++){
-        int dirLen = 0;
-        while (!(memcmp(&DIR_PATH[i][dirLen], "\0", 1) == 0) && (dirLen != 8)){
-            dirLen++;
-        }
+    if (currDepth == 0){
         syscall(6, (uint32_t) "/", 1, BLUE);
-        syscall(6, (uint32_t) DIR_PATH[i], dirLen, BLUE);
+    } else{
+        for (int i = 1; i <= currDepth; i++){
+            int dirLen = 0;
+            while (!(memcmp(&DIR_PATH[i][dirLen], "\0", 1) == 0) && (dirLen != 8)){
+                dirLen++;
+            }
+            syscall(6, (uint32_t) "/", 1, BLUE);
+            syscall(6, (uint32_t) DIR_PATH[i], dirLen, BLUE);
+        }
     }
     syscall(6, (uint32_t) "$ ", 2, GRAY);
 }
@@ -177,7 +180,7 @@ void cd(char* command, uint32_t length){
             }
 
             bool found = false;
-            for (int j = 0; j < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); j++){
+            for (int j = 1; j < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); j++){
                 struct FAT32DirectoryEntry entry = dir_table.table[j];
                 if (entry.name[0] == 0){
                     continue;
