@@ -164,7 +164,7 @@ int8_t read_directory(struct FAT32DriverRequest request){
 
     for (int i = 0; i < (CLUSTER_SIZE / 32); i++){
         if (memcmp(dir_table.table[i].name, request.name, 8) == 0){
-            if (dir_table.table[i].ext[0] != '\0'){ 
+            if (dir_table.table[i].filesize != 0){ 
                 // request bukan folder
                 return 1;
             } else {

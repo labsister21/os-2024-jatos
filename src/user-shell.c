@@ -22,10 +22,11 @@
 
 #define KEYBOARD_BUFFER_SIZE 256
 
-int CURRENT_DIR_CLUSTER_NUMBER  = 2;
-int CURRENT_DIR_PARENT_CLUSTER_NUMBER  = 2;
-int depth = 0;
+int CURRENT_DIR_CLUSTER_NUMBER;
+int CURRENT_DIR_PARENT_CLUSTER_NUMBER;
+int DEPTH;
 char DIR_PATH[10][8];
+int DIR_CLUSTERS[10];
 
 // int main(void) {
 //     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
@@ -47,10 +48,10 @@ void print_terminal_text(){
     syscall(6, (uint32_t) "JatOS-IF2230", 12, GREEN);
     syscall(6, (uint32_t) ":", 1, GRAY);
     // syscall(6, (uint32_t) curent_path, 1, BLUE);
-    int currDepth = depth;
+    int currDepth = DEPTH;
     for (int i = 1; i <= currDepth; i++){
         int dirLen = 0;
-        while (!(memcmp(&DIR_PATH[i][dirLen], "\0", 1) == 0)){
+        while (!(memcmp(&DIR_PATH[i][dirLen], "\0", 1) == 0) && (dirLen != 8)){
             dirLen++;
         }
         syscall(6, (uint32_t) "/", 1, BLUE);
@@ -65,11 +66,16 @@ void ls(){
 
     struct FAT32DriverRequest request = {
         .buf = &dir_table,
-        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
         .ext = "",
         .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
         .buffer_size = sizeof(struct FAT32DirectoryTable),
     };
+
+    int currDepth = DEPTH;
+
+    for (int i = 0; i < 8; i++){
+        request.name[i] = DIR_PATH[currDepth][i];
+    }
 
     int8_t retcode;
     syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
@@ -112,6 +118,110 @@ void ls(){
     syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
+void cd(char* command, uint32_t length){
+    int currDepth = DEPTH;
+    uint32_t clusterNumber;
+    // uint32_t parentClusterNumber = CURRENT_DIR_PARENT_CLUSTER_NUMBER;
+
+    if (memcmp(command, "cd ..", 5) == 0){
+        if (currDepth > 0){
+            DIR_CLUSTERS[currDepth] = -1;
+            if (currDepth >= 2){
+                CURRENT_DIR_PARENT_CLUSTER_NUMBER = DIR_CLUSTERS[currDepth - 2];
+            } else {
+                CURRENT_DIR_PARENT_CLUSTER_NUMBER = DIR_CLUSTERS[currDepth - 1];
+            }
+            CURRENT_DIR_CLUSTER_NUMBER = DIR_CLUSTERS[currDepth - 1];
+            DEPTH--;
+        }
+        return;
+    } else {
+        uint32_t i = 3;
+        char path[8];
+        int pathLen = 0;
+        
+        while (i < length){
+            pathLen = 0;
+            while ((command[i] != '/') && (i < length)){
+                path[pathLen] = command[i];
+                pathLen++;
+                i++;
+            }
+
+            struct FAT32DirectoryTable dir_table;
+            // int clustNumber = -1;
+
+            struct FAT32DriverRequest request = {
+                .buf = &dir_table,
+                .ext = "",
+                .buffer_size = sizeof(struct FAT32DirectoryTable),
+            };
+
+            if (currDepth == 0){
+                request.parent_cluster_number = DIR_CLUSTERS[0];
+            } else {
+                request.parent_cluster_number = DIR_CLUSTERS[currDepth - 1];
+            }
+
+            for (int j = 0; j < 8; j++){
+                request.name[j] = DIR_PATH[currDepth][j];
+            }
+
+            int8_t retcode;
+            syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+            if (retcode != 0){
+                syscall(6, (uint32_t) "failed to read request\n", 23, RED);
+                syscall(6, (uint32_t) "directory tidak ditemukan\n", 26, RED);
+                return;
+            }
+
+            bool found = false;
+            for (int j = 0; j < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); j++){
+                struct FAT32DirectoryEntry entry = dir_table.table[j];
+                if (entry.name[0] == 0){
+                    continue;
+                }
+
+                clusterNumber = entry.cluster_low | (entry.cluster_high << 16);
+                int nameLength = 0;
+
+                for (int k = 0; k < 8; k++){
+                    if (entry.name[k] == '\0'){
+                        break;
+                    }
+                    nameLength++;
+                }
+
+                if ((entry.attribute == ATR_DIRECTORY) && (pathLen == nameLength)){
+                    if (memcmp(entry.name, path, pathLen) == 0){
+                        // memcpy(DIR_PATH[currDepth], entry.name, 8);
+                        currDepth++;
+                        for (int k = 0; k < 8; k++){
+                            DIR_PATH[currDepth][k] = entry.name[k];
+                        }
+                        found = true;
+                        DIR_CLUSTERS[currDepth] = clusterNumber;
+                        // if (i != length){
+                        //     parentClusterNumber = clusterNumber;
+                        // }
+                        break;
+                    }
+                }
+            }
+
+            if (!found){
+                syscall(6, (uint32_t) "directory tidak ditemukan\n", 26, RED);
+                return;
+            }
+            i++;
+        }
+        DEPTH = currDepth;
+        CURRENT_DIR_PARENT_CLUSTER_NUMBER = DIR_CLUSTERS[currDepth-1];
+        CURRENT_DIR_CLUSTER_NUMBER = DIR_CLUSTERS[currDepth];
+    }
+}
+
 void cat(char* filename){
     
 
@@ -122,11 +232,16 @@ void cat(char* filename){
     struct FAT32DirectoryTable dir_table;
     struct FAT32DriverRequest request = {
         .buf = &dir_table,
-        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
         .ext = "",
         .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
         .buffer_size = sizeof(struct FAT32DirectoryTable),
     };
+
+    int currDepth = DEPTH;
+
+    for (int i = 0; i < 8; i++){
+        request.name[i] = DIR_PATH[currDepth][i];
+    }
 
     int8_t retcode;
     syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
@@ -195,12 +310,16 @@ void mkdir(char* foldername){
     struct FAT32DirectoryTable dir_table;
     struct FAT32DriverRequest request = {
         .buf = &dir_table,
-        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
         .ext = "",
         .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
         .buffer_size = sizeof(struct FAT32DirectoryTable),
     };
-    
+
+    int currDepth = DEPTH;
+
+    for (int i = 0; i < 8; i++){
+        request.name[i] = DIR_PATH[currDepth][i];
+    }
 
     int8_t retcode;
     syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
@@ -211,8 +330,9 @@ void mkdir(char* foldername){
     } 
 
     struct FAT32DriverRequest request_write = {
-        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .parent_cluster_number = CURRENT_DIR_CLUSTER_NUMBER,
         .buffer_size = 0,
+        .ext = "\0\0\0",
     };
 
     for (int i = 0; i < 8; i++) {
@@ -240,11 +360,16 @@ void rm(char* filename){
     struct FAT32DirectoryTable dir_table;
     struct FAT32DriverRequest request = {
         .buf = &dir_table,
-        .name = "root\0\0\0\0", // ini kalo gw make variabel kok malah compile error y
         .ext = "",
         .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
         .buffer_size = sizeof(struct FAT32DirectoryTable),
     };
+
+    int currDepth = DEPTH;
+
+    for (int i = 0; i < 8; i++){
+        request.name[i] = DIR_PATH[currDepth][i];
+    }
 
     int8_t retcode;
     syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
@@ -372,8 +497,7 @@ void executeCommand(char* command, uint32_t length){
 
     if (length > 3){
         if (memcmp(command, CD, 3) == 0){
-            syscall(6, (uint32_t) "cd detected", 11, WHITE);
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+            cd(command, length);
 
         } else if (memcmp(command, CP, 3) == 0){
             syscall(6, (uint32_t) "cp detected", 11, WHITE);
@@ -456,8 +580,18 @@ int main(void) {
     syscall(7, 0, 0, 0);
 
     memcpy(DIR_PATH[0], "root\0\0\0\0", 8);
-    memcpy(DIR_PATH[1], "test\0\0\0\0", 8);
-    depth = 1;
+    for (int i = 1; i < 10; i++){
+        memcpy(DIR_PATH[i], "\0\0\0\0\0\0\0\0", 8);
+    }
+    DEPTH = 0;
+    CURRENT_DIR_CLUSTER_NUMBER = 2;
+    CURRENT_DIR_PARENT_CLUSTER_NUMBER = 2;
+    for (int i = 0; i < 10; i++){
+        DIR_CLUSTERS[i] = -1;
+    }
+    DIR_CLUSTERS[0] = 2;
+    // memcpy(DIR_PATH[1], "test\0\0\0\0", 8);
+    // DEPTH++;
     print_terminal_text();
 
     char buf[KEYBOARD_BUFFER_SIZE];
