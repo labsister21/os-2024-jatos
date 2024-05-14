@@ -7,6 +7,8 @@
 #include "header/stdlib/string.h"
 #include "header/scheduler/scheduler.h"
 
+char* numbers[17] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"}; 
+
 
 void activate_timer_interrupt(void) {
     __asm__ volatile("cli");
@@ -128,6 +130,32 @@ void syscall(struct InterruptFrame frame) {
         case 8:
             /* clear screen */
             framebuffer_clear();
+            break;
+        case 9:
+            process_destroy(frame.cpu.general.ebx);
+            puts((char*) "Process destroyed", 17, 0xF);
+            puts((char*) "\n", 1, 0);
+            break;
+        case 10:
+            struct ProcessControlBlock* pcb = process_get_current_running_pcb_pointer();
+
+            puts((char*) "Process Name  : ", 16, 0xF);
+            puts((char*) pcb->metadata.name, 8, 0xF);
+            puts((char*) "\nProcess Id    : ", 17, 0xF);
+            puts((char*) numbers[pcb->metadata.pid], 2, 0xF);
+            puts((char*) "\nProcess State : ", 17, 0xF);
+            if (pcb->metadata.state == 0) {
+                puts((char*) "NO_PROCESS", 10, 0xF);
+            } else if (pcb->metadata.state == 1) {
+                puts((char*) "PROCESS_STATE_READY", 19, 0xF);
+            } else if (pcb->metadata.state == 2) {
+                puts((char*) "PROCESS_STATE_RUNNING", 21, 0xF);
+            } else if (pcb->metadata.state == 3) {
+                puts((char*) "PROCESS_STATE_BLOCKED", 21, 0xF);
+            }
+            puts((char*) "\n", 1, 0);
+            break;
+
     }
 }
 

@@ -26,6 +26,7 @@ int CURRENT_DIR_PARENT_CLUSTER_NUMBER;
 int DEPTH;
 char DIR_PATH[10][8];
 int DIR_CLUSTERS[10];
+char* numbers[17] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"}; 
 
 // int main(void) {
 //     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
@@ -430,54 +431,27 @@ void rm(char* filename){
     // syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
+void kill(char* pid){
+    bool found = false;
+    int pidInt = -1;
+    for (int i = 0; i < 17; i++){
+        if (memcmp(numbers[i], pid, 2) == 0){
+            found = true;
+            pidInt = i;
+            break;
+        }
+    }
+    // syscall(6, (uint32_t) "kill detected: ", 15, WHITE);
 
-// int main(void) {
+    if (!found){
+        syscall(6, (uint32_t) "pid tidak valid\n", 16, RED);
+        return;
+    }
 
-//     syscall(7, 0, 0, 0);
-
-//     char* current_path = "/";
-//     print_terminal_text(current_path);
-
-//     char buf[KEYBOARD_BUFFER_SIZE];
-//     for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
-//         buf[i] = 0;
-//     }
-
-//     int i = 0;
-//     char keyboard_input = 0;
-
-//     while (true) {
-//         syscall(4, (uint32_t) &keyboard_input, 0, 0);
-
-//         if (keyboard_input == 0){
-//             continue;
-//         } else if (keyboard_input == '\b'){
-//             if (i > 0){
-//                 i--;
-//                 buf[i] = 0;
-//             } else {
-//                 syscall(6, (uint32_t) "", 0, 0);
-//             }
-//         }
-//         else if (keyboard_input == '\n') {
-//             syscall(6, (uint32_t) "\n", 1, WHITE);
-
-//             executeCommand(buf, i);
-//             i = 0;
-
-//             for (int j = 0; j < KEYBOARD_BUFFER_SIZE; j++) {
-//                 buf[j] = 0;
-//             }
-
-//             print_terminal_text(current_path);
-//         } else {
-//             buf[i] = keyboard_input;
-//             i++;
-//         }
-//     }
-
-//     return 0;
-// }
+    // syscall(6, (uint32_t) pid, 2, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
+    syscall(9, pidInt, 0, 0);
+}
 
 void executeCommand(char* command, uint32_t length){
     char* CD = "cd ";
@@ -489,7 +463,9 @@ void executeCommand(char* command, uint32_t length){
     char* MV = "mv ";
     char* FIND = "find ";
     char* CLEAR = "clear";
-
+    char* EXEC = "exec ";
+    char* PS = "ps";
+    char* KILL = "kill";
     // char buf[11] = "cd detected";
     // syscall(6, (uint32_t) "masuk", 5, WHITE);
     // syscall(6, (uint32_t) "\n", 1, WHITE);
@@ -497,6 +473,9 @@ void executeCommand(char* command, uint32_t length){
     if (memcmp(command, LS, 2) == 0){
             ls();
         }
+    else if (memcmp(command, PS, 2) == 0){
+        syscall(10, 0, 0, 0);
+    }
 
     if (length > 3){
         if (memcmp(command, CD, 3) == 0){
@@ -524,8 +503,7 @@ void executeCommand(char* command, uint32_t length){
         } else if (memcmp(command, MV, 3) == 0){
             syscall(6, (uint32_t) "mv detected", 11, WHITE);
             syscall(6, (uint32_t) "\n", 1, WHITE);
-        }
-
+        } 
         if (length > 4){
             if (memcmp(command, CAT, 4) == 0){
 
@@ -547,6 +525,9 @@ void executeCommand(char* command, uint32_t length){
 
                 return;
             }
+            else if (memcmp(command, EXEC, 5) == 0){
+
+            }
         }
 
         if (length > 5){
@@ -555,7 +536,22 @@ void executeCommand(char* command, uint32_t length){
                 syscall(6, (uint32_t) "\n", 1, WHITE);
 
                 return;
+            } else if (memcmp(command, KILL, 4) == 0){
+
+                char pid[2] = {'\0', '\0'};
+                uint32_t i = 5;
+                while (i < length){
+                    pid[i-5] = command[i];
+                    i++;
+                }
+
+                if (length == 5){
+                    pid[1] = '\0';
+                }
+
+                kill(pid);
             }
+
         }
 
         if (length > 6){
