@@ -133,7 +133,5 @@ bool process_destroy(uint32_t pid);
 uint32_t ceil_div(uint32_t dividend, uint32_t divisor);
 int32_t process_list_get_inactive_index(void);
 
-void paging_release_page_directory(uint32_t index);
-void process_list_release(uint32_t index);
 
 #endif

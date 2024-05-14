@@ -144,11 +144,25 @@ void paging_release_page_directory(uint32_t pid){
  * @return    True if process destruction success
  */
 bool process_destroy(uint32_t pid){
-    // Release page directory
-    paging_release_page_directory(pid);
+    if (pid >= PROCESS_COUNT_MAX){
+        return false;
+    }
+    if(!process_manager_state.list_of_process[pid]){
+        return false;
+    }
 
-    // Release process control block
-    process_list_release(pid);
+    struct ProcessControlBlock *pcb = NULL;
+    for (int i = 0; i < PROCESS_COUNT_MAX; i++){
+        if (_process_list[i].metadata.pid == pid){
+            pcb = &_process_list[i];
+        }
+    }
 
+    struct PageDirectory *page_dir = pcb->context.page_directory_virtual_addr;
+    pcb->metadata.state = PROCESS_STATE_READY;
+    paging_free_page_directory(page_dir);
+
+    process_manager_state.list_of_process[pid] = false;
+    process_manager_state.active_process_count--;
     return true;
 }
