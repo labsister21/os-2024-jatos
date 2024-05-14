@@ -90,12 +90,20 @@ void kernel_setup(void) {
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
         .buffer_size           = 0x100000,
     };
-    // read(request);
+
+    struct FAT32DriverRequest clock = {
+        .buf                   = (uint8_t*) 0,
+        .name                  = "clock",
+        .ext                   = "\0\0\0",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0x100000,
+    };
 
     set_tss_kernel_current_stack();
 
+    process_create_user_process(clock);
     process_create_user_process(request);
-    // Set TSS $esp pointer and jump into shell 
+    // Set TSS $esp pointer and jump into shqell 
     scheduler_init();
     scheduler_switch_to_next_process();
 }

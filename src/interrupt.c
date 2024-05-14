@@ -6,6 +6,7 @@
 #include "header/text/framebuffer.h"
 #include "header/stdlib/string.h"
 #include "header/scheduler/scheduler.h"
+#include "header/cmos/cmos.h"
 
 char* numbers[17] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"}; 
 
@@ -155,6 +156,9 @@ void syscall(struct InterruptFrame frame) {
             }
             puts((char*) "\n", 1, 0);
             break;
+        case 11:
+            // clock
+            framebuffer_write(12, 40, 'A', 0xF, 0);
 
     }
 }
@@ -174,6 +178,8 @@ void main_interrupt_handler(struct InterruptFrame frame) {
                 .eflags = frame.int_stack.eflags,
                 .page_directory_virtual_addr = paging_get_current_page_directory_addr(),
             };
+
+            // framebuffer_write()
 
             scheduler_save_context_to_current_running_pcb(ctx);
             pic_ack(0);

@@ -45,7 +45,7 @@ int32_t process_list_get_inactive_index(void){
 }
 
 int32_t process_create_user_process(struct FAT32DriverRequest request)
-{
+{   
     int32_t retcode = PROCESS_CREATE_SUCCESS;
     if (process_manager_state.active_process_count >= PROCESS_COUNT_MAX)
     {
@@ -69,7 +69,7 @@ int32_t process_create_user_process(struct FAT32DriverRequest request)
     }
 
     // Process PCB
-    int32_t p_index = process_list_get_inactive_index();
+    int32_t p_index = process_manager_state.active_process_count;
     struct ProcessControlBlock *new_pcb = &(_process_list[p_index]);
     
     /*buat virtual address space baru*/
@@ -95,7 +95,7 @@ int32_t process_create_user_process(struct FAT32DriverRequest request)
 
     /*menyiapkan state & context baru*/
         /*set state process */
-        new_pcb->metadata.state = PROCESS_STATE_RUNNING;
+        new_pcb->metadata.state = PROCESS_STATE_READY;
 
         /*set context process*/
         new_pcb->context.cpu.segment.ds = GDT_USER_DATA_SEGMENT_SELECTOR | 0x3;
@@ -114,6 +114,8 @@ int32_t process_create_user_process(struct FAT32DriverRequest request)
     memset(new_pcb->metadata.name, 0, 8);
     memcpy(new_pcb->metadata.name, request.name, 8);
     new_pcb->metadata.pid = p_index;
+
+    process_manager_state.active_process_count++;
 
 
     /*mengembalikan state register ke semula*/

@@ -16,7 +16,8 @@
  * Initialize scheduler before executing init process 
  * 
  */
-uint8_t process_exists[16] = {0};
+
+// struct ProcessControlBlock _process_list[PROCESS_COUNT_MAX];
 
 void scheduler_init(void){  
     activate_timer_interrupt();
@@ -31,7 +32,7 @@ void scheduler_save_context_to_current_running_pcb(struct Context ctx){
     struct ProcessControlBlock *current_running_pcb = process_get_current_running_pcb_pointer();
 
     if (current_running_pcb != NULL){
-        current_running_pcb->metadata.state = PROCESS_STATE_READY;
+        current_running_pcb->metadata.state = PROCESS_STATE_RUNNING;
         current_running_pcb->context = ctx;
     }
 
@@ -46,6 +47,7 @@ __attribute__((noreturn)) void scheduler_switch_to_next_process(void){
 
     if (current_running_pcb == NULL){
        current_running_pcb = _process_list;
+       current_running_pcb->metadata.state = PROCESS_STATE_RUNNING;
     } 
 
     int idx_run = 0;
