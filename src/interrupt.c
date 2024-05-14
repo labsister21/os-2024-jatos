@@ -5,6 +5,20 @@
 #include "header/filesystem/fat32.h"
 #include "header/text/framebuffer.h"
 #include "header/stdlib/string.h"
+#include "header/scheduler/scheduler.h"
+
+
+void activate_timer_interrupt(void) {
+    __asm__ volatile("cli");
+    // Setup how often PIT fire
+    uint32_t pit_timer_counter_to_fire = PIT_TIMER_COUNTER;
+    out(PIT_COMMAND_REGISTER_PIO, PIT_COMMAND_VALUE);
+    out(PIT_CHANNEL_0_DATA_PIO, (uint8_t) (pit_timer_counter_to_fire & 0xFF));
+    out(PIT_CHANNEL_0_DATA_PIO, (uint8_t) ((pit_timer_counter_to_fire >> 8) & 0xFF));
+
+    // Activate the interrupt
+    out(PIC1_DATA, in(PIC1_DATA) & ~(1 << IRQ_TIMER));
+}
 
 
 
@@ -124,6 +138,19 @@ void main_interrupt_handler(struct InterruptFrame frame) {
             break;
         case 0x30:
             syscall(frame);
+            break;
+        case PIC1_OFFSET + IRQ_TIMER:
+            struct Context ctx = {
+                .cpu = frame.cpu,
+                .eip = frame.int_stack.eip,
+                .eflags = frame.int_stack.eflags,
+                .page_directory_virtual_addr = paging_get_current_page_directory_addr(),
+            };
+
+            scheduler_save_context_to_current_running_pcb(ctx);
+            pic_ack(0);
+            scheduler_switch_to_next_process();
+            
             break;
     }
 }

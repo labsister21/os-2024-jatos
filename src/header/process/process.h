@@ -46,8 +46,6 @@
 #define PROCESS_CREATE_FAIL_FS_READ_FAILURE      4
 
 
-
-
 /**
  * Contain information needed for task to be able to get interrupted and resumed later
  *
@@ -64,8 +62,9 @@ struct Context {
 };
 
 typedef enum PROCESS_STATE {
-    PROCESS_STATE_RUNNING,
+    NO_PROCESS,
     PROCESS_STATE_READY,
+    PROCESS_STATE_RUNNING,
     PROCESS_STATE_BLOCKED,
 } PROCESS_STATE;
 
