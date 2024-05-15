@@ -101,8 +101,8 @@ void kernel_setup(void) {
 
     set_tss_kernel_current_stack();
 
-    process_create_user_process(clock);
     process_create_user_process(request);
+    process_create_user_process(clock);
     // Set TSS $esp pointer and jump into shqell 
     scheduler_init();
     scheduler_switch_to_next_process();
