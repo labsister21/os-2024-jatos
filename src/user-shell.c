@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "header/filesystem/fat32.h"
 #include "header/stdlib/string.h"
+#include "header/process/process.h"
+
 
 #define BLACK 0x00
 #define DARK_BLUE 0x01
@@ -548,7 +550,7 @@ void executeCommand(char* command, uint32_t length){
                 if (length == 5){
                     pid[1] = '\0';
                 }
-
+    
                 kill(pid);
             }
 

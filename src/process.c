@@ -149,7 +149,7 @@ bool process_destroy(uint32_t pid){
     if (pid >= PROCESS_COUNT_MAX){
         return false;
     }
-    if(!process_manager_state.list_of_process[pid]){
+    if(process_manager_state.list_of_process[pid]){
         return false;
     }
 
@@ -157,14 +157,19 @@ bool process_destroy(uint32_t pid){
     for (int i = 0; i < PROCESS_COUNT_MAX; i++){
         if (_process_list[i].metadata.pid == pid){
             pcb = &_process_list[i];
+            break;
         }
     }
 
     struct PageDirectory *page_dir = pcb->context.page_directory_virtual_addr;
-    pcb->metadata.state = PROCESS_STATE_READY;
     paging_free_page_directory(page_dir);
 
     process_manager_state.list_of_process[pid] = false;
+    _process_list[pid] = (struct ProcessControlBlock){
+          .metadata.state = NO_PROCESS,
+    };
+    
+    memset(_process_list[pid].metadata.name, 0, 8);
     process_manager_state.active_process_count--;
     return true;
 }
