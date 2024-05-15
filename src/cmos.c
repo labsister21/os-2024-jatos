@@ -1,6 +1,6 @@
 #include "header/cmos/cmos.h"
 
-static Time time;
+Time time;
 
 void init_cmos(){
     read_cmos();
@@ -21,19 +21,28 @@ void set_cmos_reg(int reg, uint8_t value){
     out(CMOS_DATA, value);
 }
 
+uint8_t bcd_to_binary(uint8_t bcd) {
+    return (bcd & 0x0F) + ((bcd / 16) * 10);
+}
+
 void read_cmos(){
     while(is_update_cmos());
 
-    time.second = get_cmos_reg(0x00);
-    time.minute = get_cmos_reg(0x02);
-    time.hour = get_cmos_reg(0x04);
+    time.second = bcd_to_binary(get_cmos_reg(REG_SECONDS));
+    time.minute = bcd_to_binary(get_cmos_reg(REG_MINUTES));
+    time.hour = get_cmos_reg(REG_HOURS);
 
     uint8_t regB = get_cmos_reg(0x0B);
 
-    if(!(regB & 0x04)){
+    // // Convert BCD to binary if necessary
+    // if (!(regB & 0x04)) {
+    //     time.hour = bcd_to_binary(time.hour);
+    // }
+
+    if (!(regB & 0x04)) {
         time.second = (time.second & 0x0F) + ((time.second / 16) * 10);
         time.minute = (time.minute & 0x0F) + ((time.minute / 16) * 10);
-        time.hour = ((time.hour & 0x0F) + (((time.hour & 0x70) / 16) * 10)) | (time.hour & 0x80);
+        time.hour = (( (time.hour & 0x0F) + (((time.hour & 0x70) / 16) * 10) ) | (time.hour & 0x80)) + 7 % 24;
     }
 }
 
@@ -43,4 +52,36 @@ void write_cmos(Time * time){
     set_cmos_reg(REG_SECONDS, time->second);
     set_cmos_reg(REG_MINUTES, time->minute);
     set_cmos_reg(REG_HOURS, time->hour);
+}
+
+char numToStrLeft(int num) {
+
+    char str[3];
+    if (num < 10) {
+        str[0] = '0';
+        str[1] = num | '0';
+    } else {
+        int tens = num / 10;
+        int units = num % 10;
+        str[0] = tens| '0';
+        str[1] = units | '0';
+    }
+
+    return str[0];
+}
+
+char numToStrRight(int num) {
+
+    char str[3];
+    if (num < 10) {
+        str[0] = '0';
+        str[1] = num | '0';
+    } else {
+        int tens = num / 10;
+        int units = num % 10;
+        str[0] = tens| '0';
+        str[1] = units | '0';
+    }
+
+    return str[1];
 }

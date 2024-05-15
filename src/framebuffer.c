@@ -49,13 +49,22 @@ void putchar(char c, char color) {
 
 void puts(char* str, uint32_t count, char color) {
     for (uint32_t i = 0; i < count; i++) {
+
         if (str[i] == '\n')  {
             cursor.row++;
             cursor.col = 0;
+            if (cursor.row == 24){
+                    cursor.row = 0;
+                    framebuffer_clear();
+                }
         } else {
             if (cursor.col == 80) {
                 cursor.row++;
                 cursor.col = 0;
+                if (cursor.row == 24){
+                    cursor.row = 0;
+                    framebuffer_clear();
+                }
             }
             putchar(str[i], color);
             cursor.col++;

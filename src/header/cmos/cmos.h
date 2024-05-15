@@ -19,6 +19,8 @@ typedef struct
     uint8_t hour;
 } Time;
 
+extern Time time;
+
 void init_cmos();
 
 int8_t is_update_cmos();
@@ -26,11 +28,14 @@ int8_t is_update_cmos();
 uint8_t get_cmos_reg(int reg);
 
 void set_cmos_reg(int reg, uint8_t value);
+
+uint8_t bcd_to_binary(uint8_t bcd);
       
 void read_cmos();
 
 void write_cmos(Time * time);
 
-struct time get_currtime();
+char numToStrLeft(int num);
+char numToStrRight(int num);
 
 #endif

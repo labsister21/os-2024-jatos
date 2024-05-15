@@ -14,6 +14,7 @@
 #include "header/memory/paging.h"
 #include "header/process/process.h"
 #include "header/scheduler/scheduler.h"
+#include "header/cmos/cmos.h"
 
 // USER MODE TEST
 void kernel_setup(void) {
@@ -104,6 +105,7 @@ void kernel_setup(void) {
     process_create_user_process(clock);
     process_create_user_process(request);
     // Set TSS $esp pointer and jump into shqell 
+
     scheduler_init();
     scheduler_switch_to_next_process();
 }

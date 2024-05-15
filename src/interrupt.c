@@ -158,7 +158,20 @@ void syscall(struct InterruptFrame frame) {
             break;
         case 11:
             // clock
-            framebuffer_write(12, 40, 'A', 0xF, 0);
+            init_cmos();
+            break;
+        case 12:
+            read_cmos();
+            framebuffer_write(24, 72, numToStrLeft(time.hour), 0xF, 0);
+            framebuffer_write(24, 73, numToStrRight(time.hour), 0xF, 0);
+            framebuffer_write(24, 74, ':', 0xF, 0);
+            framebuffer_write(24, 75, numToStrLeft(time.minute), 0xF, 0);
+            framebuffer_write(24, 76, numToStrRight(time.minute), 0xF, 0);
+            framebuffer_write(24, 77, ':', 0xF, 0);
+            framebuffer_write(24, 78, numToStrLeft(time.second), 0xF, 0);
+            framebuffer_write(24, 79, numToStrRight(time.second), 0xF, 0);
+            break;
+
 
     }
 }
