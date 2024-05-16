@@ -29,6 +29,33 @@ void kernel_setup(void) {
     gdt_install_tss();
     set_tss_register();
 
+    paging_allocate_user_page_frame(&_paging_kernel_page_directory, (uint8_t*) 0);
+
+    // Write shell into memory
+    struct FAT32DriverRequest request = {
+        .buf                   = (uint8_t*) 0,
+        .name                  = "shell",
+        .ext                   = "\0\0\0",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0x100000,
+    };
+
+    struct FAT32DriverRequest clock = {
+        .buf                   = (uint8_t*) 0,
+        .name                  = "clock",
+        .ext                   = "\0\0\0",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0x100000,
+    };
+
+    set_tss_kernel_current_stack();
+
+    process_create_user_process(request);
+    process_create_user_process(clock);
+    // Set TSS $esp pointer and jump into shqell 
+
+    scheduler_init();
+
     // char text2[264] = "Hololive Production is a virtual YouTuber agency owned by Japanese tech entertainment company Cover Corporation. In addition to acting as a multi-channel network, Hololive Production also handles licensing, merchandising, music production and concert organization.";
     // struct FAT32DriverRequest request2 = {
     //     .buf                   = text2,
@@ -81,31 +108,5 @@ void kernel_setup(void) {
 
 
       // Allocate first 4 MiB virtual memory
-    paging_allocate_user_page_frame(&_paging_kernel_page_directory, (uint8_t*) 0);
-
-    // Write shell into memory
-    struct FAT32DriverRequest request = {
-        .buf                   = (uint8_t*) 0,
-        .name                  = "shell",
-        .ext                   = "\0\0\0",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 0x100000,
-    };
-
-    struct FAT32DriverRequest clock = {
-        .buf                   = (uint8_t*) 0,
-        .name                  = "clock",
-        .ext                   = "\0\0\0",
-        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 0x100000,
-    };
-
-    set_tss_kernel_current_stack();
-
-    process_create_user_process(request);
-    process_create_user_process(clock);
-    // Set TSS $esp pointer and jump into shqell 
-
-    scheduler_init();
     scheduler_switch_to_next_process();
 }

@@ -18,9 +18,19 @@ int main(void) {
     
     syscall(11, 0, 0, 0);
 
+    char time_array[6]; 
+
     while(true){
    
-        syscall(12, 0, 0, 0);
+        syscall(12, (uint32_t) time_array, 0, 0);
+        syscall(13, 24, 72, (uint32_t) time_array[0]);
+        syscall(13, 24, 73, (uint32_t) time_array[1]);
+        syscall(13, 24, 74, ':');
+        syscall(13, 24, 75, (uint32_t) time_array[2]);
+        syscall(13, 24, 76, (uint32_t) time_array[3]);
+        syscall(13, 24, 77, ':');
+        syscall(13, 24, 78, (uint32_t) time_array[4]);
+        syscall(13, 24, 79, (uint32_t) time_array[5]);
     }
 
 

@@ -133,11 +133,13 @@ void syscall(struct InterruptFrame frame) {
             framebuffer_clear();
             break;
         case 9:
+            /* Process destroy */
             process_destroy(frame.cpu.general.ebx);
             puts((char*) "Process destroyed", 17, 0xF);
             puts((char*) "\n", 1, 0);
             break;
         case 10:
+            /* Process print */
             struct ProcessControlBlock* pcb = process_get_current_running_pcb_pointer();
 
             puts((char*) "Process Name  : ", 16, 0xF);
@@ -161,18 +163,15 @@ void syscall(struct InterruptFrame frame) {
             init_cmos();
             break;
         case 12:
-            read_cmos();
-            framebuffer_write(24, 72, numToStrLeft(time.hour), 0xF, 0);
-            framebuffer_write(24, 73, numToStrRight(time.hour), 0xF, 0);
-            framebuffer_write(24, 74, ':', 0xF, 0);
-            framebuffer_write(24, 75, numToStrLeft(time.minute), 0xF, 0);
-            framebuffer_write(24, 76, numToStrRight(time.minute), 0xF, 0);
-            framebuffer_write(24, 77, ':', 0xF, 0);
-            framebuffer_write(24, 78, numToStrLeft(time.second), 0xF, 0);
-            framebuffer_write(24, 79, numToStrRight(time.second), 0xF, 0);
+            read_cmos((char*) frame.cpu.general.ebx);
             break;
-
-
+        case 13:
+            framebuffer_write((uint32_t) frame.cpu.general.ebx, 
+                              (uint32_t) frame.cpu.general.ecx, 
+                              (char) frame.cpu.general.edx,
+                              0xF, 
+                              0);
+            break;
     }
 }
 

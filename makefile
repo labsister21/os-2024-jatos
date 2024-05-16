@@ -98,10 +98,6 @@ user-shell:
 	@rm -f *.o
 
 
-insert-shell: inserter user-shell
-	@echo Inserting shell into root directory...
-	@cd $(OUTPUT_FOLDER); ./inserter shell 2 $(DISK_NAME).bin
-
 
 user-clock:
 	@$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/crt0.s -o crt0.o
@@ -116,6 +112,13 @@ user-clock:
 	@size --target=binary $(OUTPUT_FOLDER)/clock
 	@rm -f *.o
 
+insert-shell: inserter user-shell
+	@echo Inserting shell into root directory...
+	@cd $(OUTPUT_FOLDER); ./inserter shell 2 $(DISK_NAME).bin
+
 insert-clock: inserter user-clock
 	@echo Inserting clock into root directory...
 	@cd $(OUTPUT_FOLDER); ./inserter clock 2 $(DISK_NAME).bin
+
+insert-all: insert-shell insert-clock
+	@echo Inserting all user programs into root directory...

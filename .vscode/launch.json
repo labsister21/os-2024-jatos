@@ -78,6 +78,10 @@
                     "text": "add-symbol-file shell_elf",
                     "description": "Get shell symbols"
                 },
+                {
+                    "text": "add-symbol-file clock_elf",
+                    "description": "Get clock symbols"
+                },
             ]
         }
     ]
