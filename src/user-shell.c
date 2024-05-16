@@ -28,7 +28,14 @@ int CURRENT_DIR_PARENT_CLUSTER_NUMBER;
 int DEPTH;
 char DIR_PATH[10][8];
 int DIR_CLUSTERS[10];
-char* numbers[17] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"}; 
+char* numbers[17] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"};
+
+typedef struct {
+    char nama[8];
+    int cluster_path[10];
+    int nEff;
+    char nama_path[10][8];
+} NodeDir;
 
 // int main(void) {
 //     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
@@ -433,6 +440,128 @@ void rm(char* filename){
     // syscall(6, (uint32_t) "\n", 1, WHITE);
 }
 
+void find(char* command, uint32_t length){
+    NodeDir queue[512];
+    int qHead, qTail, qNeff;
+    char namaTujuan[8];
+    uint32_t commandLen = 5;
+    int namaTujuanLen = 0;
+
+    if (length > 13){
+        syscall(6, (uint32_t) "nama file terlalu panjang\n", 26, RED);
+        return;
+    }
+
+    for (int i = 0; i < 8; i++){
+        if (commandLen >= length){
+            namaTujuan[i] = '\0';
+        } else {
+            namaTujuan[i] = command[commandLen];
+            namaTujuanLen++;
+        }
+        commandLen++;
+    }
+
+    memcpy(queue[0].nama, "root\0\0\0\0", 8);
+    if (memcmp(queue[0].nama, namaTujuan, 8) == 0){
+        syscall(6, (uint32_t) "root\n", 5, WHITE);
+        return;
+    }
+
+    queue[0].cluster_path[0] = 2;
+    queue[0].nEff = 1;
+    memcpy(queue[0].nama_path[0], "root\0\0\0\0", 8);
+    qHead = 0;
+    qTail = 0;
+    qNeff = 1;
+
+    while (qNeff != 0){
+        struct FAT32DirectoryTable dir_table;
+        struct FAT32DriverRequest request = {
+            .buf = &dir_table,
+            .ext = "",
+            .buffer_size = sizeof(struct FAT32DirectoryTable),
+        };
+
+        if (queue[qHead].nEff == 1){
+            request.parent_cluster_number = queue[qHead].cluster_path[0];
+        } else {
+            request.parent_cluster_number = queue[qHead].cluster_path[queue[qHead].nEff - 2];
+        }
+        memcpy(request.name, queue[qHead].nama, 8);
+        
+        int retcode;
+        syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+
+        if (retcode != 0){
+            syscall(6, (uint32_t) "gagal baca\n", 11, RED);
+        }
+
+        for (int i = 1; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+            struct FAT32DirectoryEntry entry = dir_table.table[i];
+
+            if (entry.name == 0){
+                continue;
+            }
+
+            uint32_t clusterNumber = entry.cluster_low | (entry.cluster_high << 16);
+
+            if (memcmp(entry.name, namaTujuan, 8) == 0){
+                syscall(6, (uint32_t) namaTujuan, namaTujuanLen, GRAY);
+                syscall(6, (uint32_t) " ditemukan pada\n", 16, WHITE);
+                for (int j = 0; j < queue[qHead].nEff; j++){
+                    int nameLen = 0;
+                    for (int k = 0; k < 8; k++){
+                        if (queue[qHead].nama_path[j][k] == '\0'){
+                            break;
+                        } else {
+                            nameLen++;
+                        }
+                    }
+                    syscall(6, (uint32_t) queue[qHead].nama_path[j], nameLen, BLUE);
+                    syscall(6, (uint32_t) "/", 1, BLUE);
+                }
+
+                syscall(6, (uint32_t) entry.name, 8, BLUE);
+                syscall(6, (uint32_t) "\n", 1, WHITE);
+
+                return;
+            }
+
+            if (entry.attribute == ATR_DIRECTORY){
+                qTail++;
+                if (qTail + 1 == 512){
+                    qTail = 0;
+                }
+
+                for (int j = 0; j < 8; j++){
+                    queue[qTail].nama[j] = entry.name[j];
+                }
+                
+                queue[qTail].nEff = queue[qHead].nEff + 1;
+
+                for (int j = 0; j < queue[qTail].nEff; j++){
+                    if (j == queue[qTail].nEff - 1){
+                        queue[qTail].cluster_path[j] = clusterNumber;
+                        memcpy(queue[qTail].nama_path[j], entry.name, 8);
+                    } else {
+                        queue[qTail].cluster_path[j] = queue[qHead].cluster_path[j];
+                        memcpy(queue[qTail].nama_path[j], queue[qHead].nama_path[j], 8);
+                    }
+                }
+                qNeff++;
+            }
+        }
+
+        qHead++;
+        qNeff--;
+    }
+
+    if (qNeff == 0){
+        syscall(6, (uint32_t) "file/folder tidak ditemukan\n", 28, RED);
+    }
+}
+
 void kill(char* pid){
     bool found = false;
     int pidInt = -1;
@@ -534,8 +663,7 @@ void executeCommand(char* command, uint32_t length){
 
         if (length > 5){
             if (memcmp(command, FIND, 5) == 0){
-                syscall(6, (uint32_t) "find detected", 13, WHITE);
-                syscall(6, (uint32_t) "\n", 1, WHITE);
+                find(command, length);
 
                 return;
             } else if (memcmp(command, KILL, 4) == 0){
