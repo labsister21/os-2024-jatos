@@ -795,6 +795,34 @@ void mv(char * command, uint32_t length){
     }
 }
 
+void exec(char * command, uint32_t length){
+
+    char prog_name[8];
+   
+    int len_prog_name = -1;
+
+    for (uint32_t i = 5; i < length; i++){
+        if (command[i] == ' ') break;
+        if (len_prog_name > 6){
+            syscall(6, (uint32_t) "Program tidak valid\n", 20, RED);
+            return;
+        }
+        prog_name[++len_prog_name] = command[i];
+    }
+
+   struct FAT32DriverRequest process = {
+        .buf                   = (uint8_t*) 0,
+        .ext                   = "\0\0\0",
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+        .buffer_size           = 0x100000,
+    };
+
+    for (int i = 0; i < 8; i++) {
+        process.name[i] = prog_name[i];
+    }
+
+    syscall(15, (uint32_t) &process, 0, 0);    
+}
 void executeCommand(char* command, uint32_t length){
     char* CD = "cd ";
     char* LS = "ls ";
@@ -866,7 +894,7 @@ void executeCommand(char* command, uint32_t length){
                 return;
             }
             else if (memcmp(command, EXEC, 5) == 0){
-
+                exec(command, length);
             }
         }
 

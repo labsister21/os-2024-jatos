@@ -140,23 +140,30 @@ void syscall(struct InterruptFrame frame) {
             break;
         case 10:
             /* Process print */
-            struct ProcessControlBlock* pcb = process_get_current_running_pcb_pointer();
 
-            puts((char*) "Process Name  : ", 16, 0xF);
-            puts((char*) pcb->metadata.name, 8, 0xF);
-            puts((char*) "\nProcess Id    : ", 17, 0xF);
-            puts((char*) numbers[pcb->metadata.pid], 2, 0xF);
-            puts((char*) "\nProcess State : ", 17, 0xF);
-            if (pcb->metadata.state == 0) {
-                puts((char*) "NO_PROCESS", 10, 0xF);
-            } else if (pcb->metadata.state == 1) {
-                puts((char*) "PROCESS_STATE_READY", 19, 0xF);
-            } else if (pcb->metadata.state == 2) {
-                puts((char*) "PROCESS_STATE_RUNNING", 21, 0xF);
-            } else if (pcb->metadata.state == 3) {
-                puts((char*) "PROCESS_STATE_BLOCKED", 21, 0xF);
+            for (int i = 0; i < 16; i ++){
+                struct ProcessControlBlock* pcb = &_process_list[i];
+
+                if (pcb->metadata.state == NO_PROCESS) {
+                    continue;
+                }
+
+                puts((char*) "Process Name  : ", 16, 0xF);
+                puts((char*) pcb->metadata.name, 8, 0xF);
+                puts((char*) "\nProcess Id    : ", 17, 0xF);
+                puts((char*) numbers[pcb->metadata.pid], 2, 0xF);
+                puts((char*) "\nProcess State : ", 17, 0xF);
+                if (pcb->metadata.state == 0) {
+                    puts((char*) "NO_PROCESS", 10, 0xF);
+                } else if (pcb->metadata.state == 1) {
+                    puts((char*) "PROCESS_STATE_READY", 19, 0xF);
+                } else if (pcb->metadata.state == 2) {
+                    puts((char*) "PROCESS_STATE_RUNNING", 21, 0xF);
+                } else if (pcb->metadata.state == 3) {
+                    puts((char*) "PROCESS_STATE_BLOCKED", 21, 0xF);
+                }
+                puts((char*) "\n", 1, 0);
             }
-            puts((char*) "\n", 1, 0);
             break;
         case 11:
             // clock
@@ -178,6 +185,12 @@ void syscall(struct InterruptFrame frame) {
                 (const void *) frame.cpu.general.ebx,
                 (uint32_t) frame.cpu.general.ecx,
                 1
+            );
+            break;
+        case 15:
+            // create user process
+            process_create_user_process(
+                *(struct FAT32DriverRequest*) frame.cpu.general.ebx
             );
             break;
     }
