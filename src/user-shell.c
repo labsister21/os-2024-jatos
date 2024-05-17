@@ -247,7 +247,7 @@ void cat(char* filename){
     struct FAT32DriverRequest request = {
         .buf = &dir_table,
         .ext = "",
-        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .parent_cluster_number = DIR_CLUSTERS[DEPTH-1],
         .buffer_size = sizeof(struct FAT32DirectoryTable),
     };
 
@@ -297,7 +297,7 @@ void cat(char* filename){
 
     struct FAT32DriverRequest request_read = {
         .buf = &read_buffer,
-        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .parent_cluster_number = DIR_CLUSTERS[DEPTH],
         .buffer_size = req_size,
     };
 
@@ -905,6 +905,8 @@ void mv(char * command, uint32_t length){
                     if (entry.user_attribute != UATTR_NOT_EMPTY){
                         memcpy(&dir_table_dest.table[j], &move_entry, sizeof(struct FAT32DirectoryEntry));
                         memcpy(dir_table_dest.table[j].name, path_list[i], 8);
+                        dir_table_dest.table[j].user_attribute = UATTR_NOT_EMPTY;
+                        dir_table_dest.table[j].attribute = ATR_FILE;
                         syscall(14, (uint32_t) &dir_table_dest, final_parent_cluster_number, 0);
                         syscall(14, (uint32_t) &dir_table_source, CURRENT_DIR_PARENT_CLUSTER_NUMBER, 0);
                         // syscall(6, (uint32_t) "Sukses\n", 7, RED);

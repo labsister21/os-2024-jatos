@@ -42,7 +42,7 @@ void read_cmos(char* time_array){
     if (!(regB & 0x04)) {
         time.second = (time.second & 0x0F) + ((time.second / 16) * 10);
         // time.minute = ((time.minute & 0x0F) + ((time.minute / 16) * 10));
-        time.hour = (( (time.hour & 0x0F) + (((time.hour & 0x70) / 16) * 10) ) | (time.hour & 0x80)) + 7 % 24;
+        time.hour = (((( (time.hour & 0x0F) + (((time.hour & 0x70) / 16) * 10) ) | (time.hour & 0x80))) + 7) % 24;
     }
 
     time_array[0] = numToStrLeft(time.hour);
