@@ -97,8 +97,6 @@ user-shell:
 	@size --target=binary $(OUTPUT_FOLDER)/shell
 	@rm -f *.o
 
-
-
 user-clock:
 	@$(ASM) $(AFLAGS) $(SOURCE_FOLDER)/crt0.s -o crt0.o
 	@$(CC)  $(CFLAGS) -fno-pie $(SOURCE_FOLDER)/user-clock.c -o user-clock.o

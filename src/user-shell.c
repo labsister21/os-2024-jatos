@@ -584,6 +584,217 @@ void kill(char* pid){
     syscall(9, pidInt, 0, 0);
 }
 
+void cp(char * command, uint32_t length){
+    
+    char source[8];
+    char dest[8];
+
+    int len_source = -1;
+    int len_dest = -1;
+
+    for (uint32_t i = 3; i < length; i++){
+        if (command[i] == ' ') break;
+        if (len_source > 6){
+            syscall(6, (uint32_t) "Source tidak valid\n", 19, RED);
+            return;
+        }
+        source[++len_source] = command[i];
+    }
+
+    for (uint32_t i = 3 + len_source + 2; i < length; i++){
+        if (command[i] == ' ') break;
+        if (len_dest > 6){
+            syscall(6, (uint32_t) "Dest tidak valid\n", 17, RED);
+            return;
+        }
+        dest[++len_dest] = command[i];
+    }
+
+    if (len_source == -1 || len_dest == -1 || len_source+1 > 8 || len_dest+1> 8){
+        syscall(6, (uint32_t) "Input tidak valid\n", 18, RED);
+        return;
+    } 
+
+    syscall(6, (uint32_t) "Copying ", 8, WHITE);
+    syscall(6, (uint32_t) source, len_source + 1, WHITE);
+    syscall(6, (uint32_t) " to ", 4, WHITE);
+    syscall(6, (uint32_t) dest, len_dest + 1, WHITE);
+    syscall(6, (uint32_t) "\n", 1, WHITE);
+
+    struct FAT32DirectoryTable dir_table;
+    struct FAT32DriverRequest request = {
+        .buf = &dir_table,
+        .ext = "",
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = sizeof(struct FAT32DirectoryTable),
+    };
+
+    int currDepth = DEPTH;
+
+    for (int i = 0; i < 8; i++){
+        request.name[i] = DIR_PATH[currDepth][i];
+    }
+
+    int8_t retcode;
+    syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "dir table corrupt\n", 17, WHITE);
+        return;
+    }
+
+    uint32_t source_cluster_number = 0;
+    uint32_t source_file_size = 0;
+    char ext[3];
+
+    for (int i = 0; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+        struct FAT32DirectoryEntry entry = dir_table.table[i];
+        if (memcmp(entry.name, source, 8) == 0){
+            source_cluster_number = entry.cluster_low | (entry.cluster_high << 16);
+            source_file_size = entry.filesize;
+            memcpy(ext, entry.ext, 3);
+            break;
+        }
+    }
+
+    if (source_cluster_number == 0){
+        syscall(6, (uint32_t) "Source tidak valid\n", 19, RED);
+        return;
+    }
+
+    uint32_t rounded_file_size = 0;
+    while (rounded_file_size < source_file_size){
+        rounded_file_size += CLUSTER_SIZE;
+    }
+
+    char read_buffer[rounded_file_size];
+    struct FAT32DriverRequest request_read = {
+        .buf = read_buffer,
+        .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+        .buffer_size = rounded_file_size,
+    };
+
+    for (int i = 0; i < 8; i++) {
+        request_read.name[i] = source[i];
+    }
+
+    retcode = 0;
+    syscall(0, (uint32_t)&request_read, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "Copy gagal\n", 11, RED);
+        return;
+    }
+
+    struct FAT32DriverRequest request_write = {
+        .buf = read_buffer,
+        .parent_cluster_number = CURRENT_DIR_CLUSTER_NUMBER,
+        .buffer_size = source_file_size,
+    };
+
+    for (int i = 0; i < 3; i++){
+        request_write.ext[i] = ext[i];
+    }
+
+    for (int i = 0; i < 8; i++) {
+        request_write.name[i] = dest[i];
+    }
+
+    syscall(2, (uint32_t)&request_write, (uint32_t)&retcode, 0);
+
+    if (retcode != 0){
+        syscall(6, (uint32_t) "Copy gagal\n", 11, RED);
+        return;
+    }
+}
+
+void mv(char * command, uint32_t length){
+    char source[8];
+    char dest[512]; memset(dest, 0x0, 512);
+
+    int len_source = -1;
+    int len_dest = -1;
+
+    for (uint32_t i = 3; i < length; i++){
+        if (command[i] == ' ') break;
+        if (len_source > 6){
+            syscall(6, (uint32_t) "Source tidak valid\n", 19, RED);
+            return;
+        }
+        source[++len_source] = command[i];
+    }
+
+    bool rename_file = false;
+    if (command[len_source+2+3] != '/') rename_file = true;
+
+    for (uint32_t i = 3 + len_source + 2; i < length; i++){
+        if (command[i] == ' ') break;
+        dest[++len_dest] = command[i];
+    }
+
+    if (len_source == -1 || len_dest == -1 || len_source+1 > 8){
+        syscall(6, (uint32_t) "Input tidak valid\n", 18, RED);
+        return;
+    } 
+
+    syscall(6, (uint32_t) "Moving ", 7, WHITE);
+    syscall(6, (uint32_t) source, len_source + 1, WHITE);
+    syscall(6, (uint32_t) " to ", 4, WHITE);
+    syscall(6, (uint32_t) dest, len_dest + 1, WHITE);
+    syscall(6, (uint32_t) "\n", 1, WHITE);
+
+    if (rename_file){
+        if (len_dest+1 > 8){
+            syscall(6, (uint32_t) "Nama file target terlalu panjang\n", 33, RED);
+            return;
+        }
+
+        struct FAT32DirectoryTable dir_table;
+        struct FAT32DriverRequest request = {
+            .buf = &dir_table,
+            .ext = "",
+            .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+            .buffer_size = sizeof(struct FAT32DirectoryTable),
+        };
+
+        for (int i = 0; i < 8; i++){
+            request.name[i] = DIR_PATH[DEPTH][i];
+        }
+
+        uint32_t retcode;
+        syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+        if (retcode != 0){
+            syscall(6, (uint32_t) "dir table corrupt\n", 17, WHITE);
+            return;
+        }
+
+        bool found = false;
+
+        for (int i = 0; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+            struct FAT32DirectoryEntry entry = dir_table.table[i];
+            if (memcmp(entry.name, source, 8) == 0){
+                memcpy(dir_table.table[i].name, dest, 8);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found){
+            syscall(6, (uint32_t) "File source tidak ditemukan\n", 28, RED);
+            return;
+        }
+
+        syscall(14, (uint32_t) &dir_table, CURRENT_DIR_PARENT_CLUSTER_NUMBER, 0);
+
+        // syscall(6, (uint32_t) "Sukses\n", 7, RED);
+
+        
+    } else { // move file
+
+    }
+}
+
 void executeCommand(char* command, uint32_t length){
     char* CD = "cd ";
     char* LS = "ls ";
@@ -613,8 +824,7 @@ void executeCommand(char* command, uint32_t length){
             cd(command, length);
 
         } else if (memcmp(command, CP, 3) == 0){
-            syscall(6, (uint32_t) "cp detected", 11, WHITE);
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+            cp(command, length);
 
         } else if (memcmp(command, RM, 3) == 0){
 
@@ -632,8 +842,7 @@ void executeCommand(char* command, uint32_t length){
             return;
 
         } else if (memcmp(command, MV, 3) == 0){
-            syscall(6, (uint32_t) "mv detected", 11, WHITE);
-            syscall(6, (uint32_t) "\n", 1, WHITE);
+            mv(command, length);
         } 
         if (length > 4){
             if (memcmp(command, CAT, 4) == 0){

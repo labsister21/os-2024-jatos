@@ -429,6 +429,8 @@ int8_t delete(struct FAT32DriverRequest request){
 
         write_clusters(&driver_state.fat_table, FAT_CLUSTER_NUMBER, 1);
         write_clusters(&parent_dir_table, request.parent_cluster_number, 1);
+
+        return 0;
     }
 
     // Menghapus entry jika entry adalah file

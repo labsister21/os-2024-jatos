@@ -32,7 +32,7 @@ void scheduler_save_context_to_current_running_pcb(struct Context ctx){
     struct ProcessControlBlock *current_running_pcb = process_get_current_running_pcb_pointer();
 
     if (current_running_pcb != NULL){
-        current_running_pcb->metadata.state = PROCESS_STATE_RUNNING;
+        // current_running_pcb->metadata.state = PROCESS_STATE_RUNNING;
         current_running_pcb->context = ctx;
     }
 

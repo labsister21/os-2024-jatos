@@ -172,6 +172,14 @@ void syscall(struct InterruptFrame frame) {
                               0xF, 
                               0);
             break;
+        case 14:
+            // write cluster override
+            write_clusters(
+                (const void *) frame.cpu.general.ebx,
+                (uint32_t) frame.cpu.general.ecx,
+                1
+            );
+            break;
     }
 }
 
