@@ -135,8 +135,8 @@ void syscall(struct InterruptFrame frame) {
         case 9:
             /* Process destroy */
             process_destroy(frame.cpu.general.ebx);
-            puts((char*) "Process destroyed", 17, 0xF);
-            puts((char*) "\n", 1, 0);
+            // puts((char*) "Process destroyed", 17, 0xF);
+            // puts((char*) "\n", 1, 0);
             break;
         case 10:
             /* Process print */

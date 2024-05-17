@@ -28,7 +28,8 @@ int CURRENT_DIR_PARENT_CLUSTER_NUMBER;
 int DEPTH;
 char DIR_PATH[10][8];
 int DIR_CLUSTERS[10];
-char* numbers[17] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"};
+char* numbers[16] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"};
+int clock_is_running;
 
 typedef struct {
     char nama[8];
@@ -565,7 +566,7 @@ void find(char* command, uint32_t length){
 void kill(char* pid){
     bool found = false;
     int pidInt = -1;
-    for (int i = 0; i < 17; i++){
+    for (int i = 0; i < 16; i++){
         if (memcmp(numbers[i], pid, 2) == 0){
             found = true;
             pidInt = i;
@@ -574,7 +575,8 @@ void kill(char* pid){
     }
     // syscall(6, (uint32_t) "kill detected: ", 15, WHITE);
 
-    if (!found){
+    int clock_condition = clock_is_running;
+    if (!found || (pidInt > 0 && clock_condition == 0) || (pidInt > 1 && clock_condition == 1)){
         syscall(6, (uint32_t) "pid tidak valid\n", 16, RED);
         return;
     }
@@ -582,6 +584,18 @@ void kill(char* pid){
     // syscall(6, (uint32_t) pid, 2, WHITE);
     // syscall(6, (uint32_t) "\n", 1, WHITE);
     syscall(9, pidInt, 0, 0);
+
+    if (pidInt == 1){
+        clock_is_running = 0;
+        syscall(13, 24, 72, ' ');
+        syscall(13, 24, 73, ' ');
+        syscall(13, 24, 74, ' ');
+        syscall(13, 24, 75, ' ');
+        syscall(13, 24, 76, ' ');
+        syscall(13, 24, 77, ' ');
+        syscall(13, 24, 78, ' ');
+        syscall(13, 24, 79, ' ');
+    }
 }
 
 void cp(char * command, uint32_t length){
@@ -737,11 +751,11 @@ void mv(char * command, uint32_t length){
         return;
     } 
 
-    syscall(6, (uint32_t) "Moving ", 7, WHITE);
-    syscall(6, (uint32_t) source, len_source + 1, WHITE);
-    syscall(6, (uint32_t) " to ", 4, WHITE);
-    syscall(6, (uint32_t) dest, len_dest + 1, WHITE);
-    syscall(6, (uint32_t) "\n", 1, WHITE);
+    // syscall(6, (uint32_t) "Moving ", 7, WHITE);
+    // syscall(6, (uint32_t) source, len_source + 1, WHITE);
+    // syscall(6, (uint32_t) " to ", 4, WHITE);
+    // syscall(6, (uint32_t) dest, len_dest + 1, WHITE);
+    // syscall(6, (uint32_t) "\n", 1, WHITE);
 
     if (rename_file){
         if (len_dest+1 > 8){
@@ -792,6 +806,153 @@ void mv(char * command, uint32_t length){
         
     } else { // move file
 
+        struct FAT32DirectoryTable dir_table_source;
+        struct FAT32DriverRequest request = {
+            .buf = &dir_table_source,
+            .ext = "",
+            .parent_cluster_number = CURRENT_DIR_PARENT_CLUSTER_NUMBER,
+            .buffer_size = sizeof(struct FAT32DirectoryTable),
+        };
+
+        for (int i = 0; i < 8; i++){
+            request.name[i] = DIR_PATH[DEPTH][i];
+        }
+
+        uint32_t retcode;
+        syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
+
+        if (retcode != 0){
+            syscall(6, (uint32_t) "dir table corrupt\n", 17, WHITE);
+            return;
+        }
+
+        bool found = false;
+
+        struct FAT32DirectoryEntry move_entry;
+
+        for (int i = 0; i < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); i++){
+            struct FAT32DirectoryEntry entry = dir_table_source.table[i];
+            if (memcmp(entry.name, source, 8) == 0){
+                memcpy(&move_entry, &entry, sizeof(struct FAT32DirectoryEntry));
+                memset(dir_table_source.table[i].name, 0x0, 8);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found){
+            syscall(6, (uint32_t) "File source tidak ditemukan\n", 28, RED);
+            return;
+        }
+
+        /* ************************************ */
+
+        int depth = 0;
+
+        char path_list[10][8];
+
+        char temp_path[8];
+        int temp_len = 0;
+
+        int final_parent_cluster_number = 2;
+        int prev_parent_cluster_number = 2;
+
+        memcpy(path_list[0], "root\0\0\0\0", 8);
+        
+        for (int i = 1; i < len_dest+1; i++){
+
+            if (dest[i] != '/'){
+                temp_path[temp_len] = dest[i];
+                temp_len++;
+            }
+
+            if (temp_len > 8) {
+                syscall(6, (uint32_t) "Nama folder/file tidak valid\n", 29, RED);
+                return;
+            }
+            
+            if (dest[i] == '/' || i == len_dest){
+                memcpy(path_list[depth+1], temp_path, 8);
+                memset(temp_path, 0x0, 8);
+                depth++;
+                temp_len = 0;
+            }
+        }
+
+        struct FAT32DirectoryTable dir_table_dest;
+        struct FAT32DriverRequest request2 = {
+            .buf = &dir_table_dest,
+            .name = "root\0\0\0\0",
+            .ext = "",
+            .parent_cluster_number = prev_parent_cluster_number,
+            .buffer_size = sizeof(struct FAT32DirectoryTable),
+        };
+
+        syscall(1, (uint32_t)&request2, (uint32_t)&retcode, 0);
+            if (retcode != 0){
+                syscall(6, (uint32_t) "Path tidak valid1\n", 18, RED);
+            return;
+        }
+
+        for (int i = 1; i < depth+1; i++){
+
+            // syscall(6, (uint32_t) path_list[i], 8, WHITE);
+            // syscall(6, (uint32_t) "\n", 1, WHITE);
+
+            if (i == depth) {
+                for (int j = 0; j < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); j++){
+                    struct FAT32DirectoryEntry entry = dir_table_dest.table[j];
+                    if (entry.user_attribute != UATTR_NOT_EMPTY){
+                        memcpy(&dir_table_dest.table[j], &move_entry, sizeof(struct FAT32DirectoryEntry));
+                        memcpy(dir_table_dest.table[j].name, path_list[i], 8);
+                        syscall(14, (uint32_t) &dir_table_dest, final_parent_cluster_number, 0);
+                        syscall(14, (uint32_t) &dir_table_source, CURRENT_DIR_PARENT_CLUSTER_NUMBER, 0);
+                        // syscall(6, (uint32_t) "Sukses\n", 7, RED);
+                        return;
+                    }
+                }
+            } else {
+     
+                bool is_path_found = false;
+                for (int j = 0; j < (int) (CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry)); j++){
+                    struct FAT32DirectoryEntry entry = dir_table_dest.table[j];
+                    if (memcmp(entry.name, path_list[i], 8) == 0){
+                        final_parent_cluster_number = entry.cluster_low | (entry.cluster_high << 16);
+                        is_path_found = true;
+                        break;
+                    }
+                }
+
+                if (!is_path_found){
+                    syscall(6, (uint32_t) "Path tidak valid2\n", 18, RED);
+                    return;
+                }
+
+                memset(&dir_table_dest, 0x0, sizeof(struct FAT32DirectoryTable));
+
+                struct FAT32DriverRequest request2 = {
+                    .buf = &dir_table_dest,
+                    .ext = "",
+                    .parent_cluster_number = prev_parent_cluster_number,
+                    .buffer_size = sizeof(struct FAT32DirectoryTable),
+                };
+
+                for (int j = 0; j < 8; j++){
+                    request2.name[j] = path_list[i][j];
+                }
+
+                retcode = 0;
+                syscall(1, (uint32_t)&request2, (uint32_t)&retcode, 0);
+
+                if (retcode != 0){
+                    syscall(6, (uint32_t) "Path tidak valid1\n", 18, RED);
+                return;
+                }
+
+                prev_parent_cluster_number = final_parent_cluster_number;
+            }
+
+        }
     }
 }
 
@@ -821,8 +982,17 @@ void exec(char * command, uint32_t length){
         process.name[i] = prog_name[i];
     }
 
-    syscall(15, (uint32_t) &process, 0, 0);    
+    if (memcmp(process.name, "clock", 5) != 0){
+        syscall(6, (uint32_t) "Program tidak ditemukan\n", 24, RED);
+        return;
+    } else if (clock_is_running == 1) {
+        syscall(6, (uint32_t) "Clock sudah berjalan\n", 21, RED);
+    } else {
+        syscall(15, (uint32_t) &process, 0, 0);    
+        clock_is_running = 1;
+    }
 }
+
 void executeCommand(char* command, uint32_t length){
     char* CD = "cd ";
     char* LS = "ls ";
@@ -952,6 +1122,7 @@ int main(void) {
     DEPTH = 0;
     CURRENT_DIR_CLUSTER_NUMBER = 2;
     CURRENT_DIR_PARENT_CLUSTER_NUMBER = 2;
+    clock_is_running = 0;
     for (int i = 0; i < 10; i++){
         DIR_CLUSTERS[i] = -1;
     }
