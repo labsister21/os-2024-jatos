@@ -92,8 +92,6 @@ qemu-system-i386 -s -S -drive file=$(DISK_NAME).bin,format=raw,if=ide,index=0,me
 
 ## Screenshots
 
-## Screenshots
-
 - Booting Screen
 
 ![Kill 0](./other/Screenshot1.jpg)
