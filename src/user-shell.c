@@ -312,6 +312,7 @@ void print_jatos(){
     syscall(16, 14, 56, (uint32_t) " ");
     syscall(16, 14, 57, (uint32_t) " ");
 
+    // while (true);
     for (int i = 0; i < 500000000; i++){}
     syscall(8, 0, 0, 0);
 }
@@ -506,11 +507,13 @@ void cat(char* filename){
     // syscall(6, (uint32_t) filename, 8, WHITE);
     // syscall(6, (uint32_t) "\n", 1, WHITE);
 
+    int num_cluster = DEPTH == 0 ? DIR_CLUSTERS[DEPTH] : DIR_CLUSTERS[DEPTH - 1];
+
     struct FAT32DirectoryTable dir_table;
     struct FAT32DriverRequest request = {
         .buf = &dir_table,
         .ext = "",
-        .parent_cluster_number = DIR_CLUSTERS[DEPTH-1],
+        .parent_cluster_number = num_cluster,
         .buffer_size = sizeof(struct FAT32DirectoryTable),
     };
 
