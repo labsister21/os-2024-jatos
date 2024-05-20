@@ -71,12 +71,12 @@ On wsl terminal,
 qemu-system-i386 -s -S -drive file=$(DISK_NAME).bin,format=raw,if=ide,index=0,media=disk -cdrom $(ISO_NAME).iso
 ```
 ## Command List
-- cd	- Mengganti current working directory (termasuk .. untuk naik)
+- cd	- Mengganti current working directory
 - ls	- Menuliskan isi current working directory
 - mkdir	- Membuat sebuah folder kosong baru pada current working directory
-- cat	- Menuliskan sebuah file sebagai text file ke layar (Gunakan format LF newline)
-- cp	- Mengcopy suatu file (Folder menjadi bonus)
-- rm	- Menghapus suatu file (Folder menjadi bonus)
+- cat	- Menuliskan sebuah file sebagai text file ke layar 
+- cp	- Mengcopy suatu file 
+- rm	- Menghapus suatu file 
 - mv	- Memindah dan merename lokasi file/folder
 - find	- Mencari file/folder dengan nama yang sama diseluruh file system
 - exec	- Menjalankan program yang ada pada filesystem
