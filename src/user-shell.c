@@ -38,11 +38,6 @@ typedef struct {
     char nama_path[10][8];
 } NodeDir;
 
-// int main(void) {
-//     __asm__ volatile("mov %0, %%eax" : /* <Empty> */ : "r"(0xDEADBEEF));
-//     return 0;
-// }
-
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     __asm__ volatile("mov %0, %%ebx" : /* <Empty> */ : "r"(ebx));
     __asm__ volatile("mov %0, %%ecx" : /* <Empty> */ : "r"(ecx));
@@ -51,6 +46,274 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx) {
     // Note : gcc usually use %eax as intermediate register,
     //        so it need to be the last one to mov
     __asm__ volatile("int $0x30");
+}
+
+void print_jatos(){
+    // J
+    syscall(16, 6, 23, (uint32_t) " ");
+    syscall(16, 7, 22, (uint32_t) " ");
+    syscall(16, 7, 23, (uint32_t) " ");
+    syscall(16, 7, 24, (uint32_t) " ");
+    syscall(16, 7, 25, (uint32_t) " ");
+    syscall(16, 8, 23, (uint32_t) " ");
+    syscall(16, 8, 24, (uint32_t) " ");
+    syscall(16, 9, 24, (uint32_t) " ");
+    syscall(16, 10, 24, (uint32_t) " ");
+    syscall(16, 11, 24, (uint32_t) " ");
+    syscall(16, 12, 24, (uint32_t) " ");
+    syscall(16, 13, 24, (uint32_t) " ");
+    syscall(16, 13, 23, (uint32_t) " ");
+    syscall(16, 13, 18, (uint32_t) " ");
+    syscall(16, 14, 19, (uint32_t) " ");
+    syscall(16, 14, 20, (uint32_t) " ");
+    syscall(16, 14, 21, (uint32_t) " ");
+    syscall(16, 14, 22, (uint32_t) " ");
+
+    // A
+    for (int i = 0; i < 300000000; i++){}
+    syscall(16, 9, 27, (uint32_t) " ");
+    syscall(16, 9, 28, (uint32_t) " ");
+    syscall(16, 9, 29, (uint32_t) " ");
+    syscall(16, 10, 26, (uint32_t) " ");
+    syscall(16, 10, 29, (uint32_t) " ");
+    syscall(16, 10, 30, (uint32_t) " ");
+    syscall(16, 11, 30, (uint32_t) " ");
+    syscall(16, 12, 27, (uint32_t) " ");
+    syscall(16, 12, 28, (uint32_t) " ");
+    syscall(16, 12, 29, (uint32_t) " ");
+    syscall(16, 12, 30, (uint32_t) " ");
+    syscall(16, 13, 26, (uint32_t) " ");
+    syscall(16, 13, 27, (uint32_t) " ");
+    syscall(16, 13, 30, (uint32_t) " ");
+    syscall(16, 14, 27, (uint32_t) " ");
+    syscall(16, 14, 28, (uint32_t) " ");
+    syscall(16, 14, 29, (uint32_t) " ");
+    syscall(16, 14, 30, (uint32_t) " ");
+
+    // T
+    for (int i = 0; i < 300000000; i++){}
+    syscall(16, 8, 33, (uint32_t) " ");
+    syscall(16, 9, 33, (uint32_t) " ");
+    syscall(16, 10, 32, (uint32_t) " ");
+    syscall(16, 10, 33, (uint32_t) " ");
+    syscall(16, 10, 34, (uint32_t) " ");
+    syscall(16, 10, 35, (uint32_t) " ");
+    syscall(16, 10, 36, (uint32_t) " ");
+    syscall(16, 11, 33, (uint32_t) " ");
+    syscall(16, 11, 35, (uint32_t) " ");
+    syscall(16, 12, 33, (uint32_t) " ");
+    syscall(16, 13, 33, (uint32_t) " ");
+    syscall(16, 13, 34, (uint32_t) " ");
+    syscall(16, 14, 34, (uint32_t) " ");
+    syscall(16, 14, 35, (uint32_t) " ");
+    syscall(16, 14, 36, (uint32_t) " ");
+    syscall(16, 14, 37, (uint32_t) " ");
+
+    // O
+    for (int i = 0; i < 300000000; i++){}
+    syscall(16, 6, 43, (uint32_t) " ");
+    syscall(16, 6, 44, (uint32_t) " ");
+    syscall(16, 6, 45, (uint32_t) " ");
+    syscall(16, 7, 40, (uint32_t) " ");
+    syscall(16, 7, 41, (uint32_t) " ");
+    syscall(16, 7, 42, (uint32_t) " ");
+    syscall(16, 7, 45, (uint32_t) " ");
+    syscall(16, 7, 46, (uint32_t) " ");
+    syscall(16, 7, 47, (uint32_t) " ");
+    syscall(16, 8, 39, (uint32_t) " ");
+    syscall(16, 8, 40, (uint32_t) " ");
+    syscall(16, 8, 47, (uint32_t) " ");
+    syscall(16, 8, 48, (uint32_t) " ");
+    syscall(16, 9, 39, (uint32_t) " ");
+    syscall(16, 9, 49, (uint32_t) " ");
+    syscall(16, 10, 39, (uint32_t) " ");
+    syscall(16, 10, 48, (uint32_t) " ");
+    syscall(16, 10, 49, (uint32_t) " ");
+    syscall(16, 11, 39, (uint32_t) " ");
+    syscall(16, 11, 48, (uint32_t) " ");
+    syscall(16, 11, 49, (uint32_t) " ");
+    syscall(16, 12, 39, (uint32_t) " ");
+    syscall(16, 12, 40, (uint32_t) " ");
+    syscall(16, 12, 48, (uint32_t) " ");
+    syscall(16, 12, 49, (uint32_t) " ");
+    syscall(16, 13, 40, (uint32_t) " ");
+    syscall(16, 13, 41, (uint32_t) " ");
+    syscall(16, 13, 47, (uint32_t) " ");
+    syscall(16, 13, 48, (uint32_t) " ");
+    syscall(16, 14, 42, (uint32_t) " ");
+    syscall(16, 14, 43, (uint32_t) " ");
+    syscall(16, 14, 44, (uint32_t) " ");
+    syscall(16, 14, 45, (uint32_t) " ");
+    syscall(16, 14, 46, (uint32_t) " ");
+    syscall(16, 14, 47, (uint32_t) " ");
+    syscall(16, 14, 48, (uint32_t) " ");
+
+    // S
+    for (int i = 0; i < 300000000; i++){}
+
+    syscall(16, 6, 54, (uint32_t) " ");
+    syscall(16, 6, 55, (uint32_t) " ");
+    syscall(16, 6, 56, (uint32_t) " ");
+    syscall(16, 6, 57, (uint32_t) " ");
+    syscall(16, 6, 58, (uint32_t) " ");
+    syscall(16, 7, 52, (uint32_t) " ");
+    syscall(16, 7, 53, (uint32_t) " ");
+    syscall(16, 7, 54, (uint32_t) " ");
+    syscall(16, 7, 58, (uint32_t) " ");
+    syscall(16, 7, 59, (uint32_t) " ");
+    syscall(16, 8, 52, (uint32_t) " ");
+    syscall(16, 8, 53, (uint32_t) " ");
+    syscall(16, 8, 58, (uint32_t) " ");
+    syscall(16, 8, 59, (uint32_t) " ");
+    syscall(16, 9, 53, (uint32_t) " ");
+    syscall(16, 10, 54, (uint32_t) " ");
+    syscall(16, 10, 55, (uint32_t) " ");
+    syscall(16, 10, 56, (uint32_t) " ");
+    syscall(16, 11, 57, (uint32_t) " ");
+    syscall(16, 11, 58, (uint32_t) " ");
+    syscall(16, 12, 58, (uint32_t) " ");
+    syscall(16, 13, 58, (uint32_t) " ");
+    syscall(16, 13, 51, (uint32_t) " ");
+    syscall(16, 13, 52, (uint32_t) " ");
+    syscall(16, 14, 53, (uint32_t) " ");
+    syscall(16, 14, 54, (uint32_t) " ");
+    syscall(16, 14, 55, (uint32_t) " ");
+    syscall(16, 14, 56, (uint32_t) " ");
+    syscall(16, 14, 57, (uint32_t) " ");
+
+
+    for (int i = 0; i < 100000000; i++){}
+    syscall(8, 0, 0, 0);
+    for (int i = 0; i < 100000000; i++){}
+    // J
+    syscall(16, 6, 23, (uint32_t) " ");
+    syscall(16, 7, 22, (uint32_t) " ");
+    syscall(16, 7, 23, (uint32_t) " ");
+    syscall(16, 7, 24, (uint32_t) " ");
+    syscall(16, 7, 25, (uint32_t) " ");
+    syscall(16, 8, 23, (uint32_t) " ");
+    syscall(16, 8, 24, (uint32_t) " ");
+    syscall(16, 9, 24, (uint32_t) " ");
+    syscall(16, 10, 24, (uint32_t) " ");
+    syscall(16, 11, 24, (uint32_t) " ");
+    syscall(16, 12, 24, (uint32_t) " ");
+    syscall(16, 13, 24, (uint32_t) " ");
+    syscall(16, 13, 23, (uint32_t) " ");
+    syscall(16, 13, 18, (uint32_t) " ");
+    syscall(16, 14, 19, (uint32_t) " ");
+    syscall(16, 14, 20, (uint32_t) " ");
+    syscall(16, 14, 21, (uint32_t) " ");
+    syscall(16, 14, 22, (uint32_t) " ");
+
+    // A
+    syscall(16, 9, 27, (uint32_t) " ");
+    syscall(16, 9, 28, (uint32_t) " ");
+    syscall(16, 9, 29, (uint32_t) " ");
+    syscall(16, 10, 26, (uint32_t) " ");
+    syscall(16, 10, 29, (uint32_t) " ");
+    syscall(16, 10, 30, (uint32_t) " ");
+    syscall(16, 11, 30, (uint32_t) " ");
+    syscall(16, 12, 27, (uint32_t) " ");
+    syscall(16, 12, 28, (uint32_t) " ");
+    syscall(16, 12, 29, (uint32_t) " ");
+    syscall(16, 12, 30, (uint32_t) " ");
+    syscall(16, 13, 26, (uint32_t) " ");
+    syscall(16, 13, 27, (uint32_t) " ");
+    syscall(16, 13, 30, (uint32_t) " ");
+    syscall(16, 14, 27, (uint32_t) " ");
+    syscall(16, 14, 28, (uint32_t) " ");
+    syscall(16, 14, 29, (uint32_t) " ");
+    syscall(16, 14, 30, (uint32_t) " ");
+
+    // T
+    syscall(16, 8, 33, (uint32_t) " ");
+    syscall(16, 9, 33, (uint32_t) " ");
+    syscall(16, 10, 32, (uint32_t) " ");
+    syscall(16, 10, 33, (uint32_t) " ");
+    syscall(16, 10, 34, (uint32_t) " ");
+    syscall(16, 10, 35, (uint32_t) " ");
+    syscall(16, 10, 36, (uint32_t) " ");
+    syscall(16, 11, 33, (uint32_t) " ");
+    syscall(16, 11, 35, (uint32_t) " ");
+    syscall(16, 12, 33, (uint32_t) " ");
+    syscall(16, 13, 33, (uint32_t) " ");
+    syscall(16, 13, 34, (uint32_t) " ");
+    syscall(16, 14, 34, (uint32_t) " ");
+    syscall(16, 14, 35, (uint32_t) " ");
+    syscall(16, 14, 36, (uint32_t) " ");
+    syscall(16, 14, 37, (uint32_t) " ");
+
+    // O
+    syscall(16, 6, 43, (uint32_t) " ");
+    syscall(16, 6, 44, (uint32_t) " ");
+    syscall(16, 6, 45, (uint32_t) " ");
+    syscall(16, 7, 40, (uint32_t) " ");
+    syscall(16, 7, 41, (uint32_t) " ");
+    syscall(16, 7, 42, (uint32_t) " ");
+    syscall(16, 7, 45, (uint32_t) " ");
+    syscall(16, 7, 46, (uint32_t) " ");
+    syscall(16, 7, 47, (uint32_t) " ");
+    syscall(16, 8, 39, (uint32_t) " ");
+    syscall(16, 8, 40, (uint32_t) " ");
+    syscall(16, 8, 47, (uint32_t) " ");
+    syscall(16, 8, 48, (uint32_t) " ");
+    syscall(16, 9, 39, (uint32_t) " ");
+    syscall(16, 9, 49, (uint32_t) " ");
+    syscall(16, 10, 39, (uint32_t) " ");
+    syscall(16, 10, 48, (uint32_t) " ");
+    syscall(16, 10, 49, (uint32_t) " ");
+    syscall(16, 11, 39, (uint32_t) " ");
+    syscall(16, 11, 48, (uint32_t) " ");
+    syscall(16, 11, 49, (uint32_t) " ");
+    syscall(16, 12, 39, (uint32_t) " ");
+    syscall(16, 12, 40, (uint32_t) " ");
+    syscall(16, 12, 48, (uint32_t) " ");
+    syscall(16, 12, 49, (uint32_t) " ");
+    syscall(16, 13, 40, (uint32_t) " ");
+    syscall(16, 13, 41, (uint32_t) " ");
+    syscall(16, 13, 47, (uint32_t) " ");
+    syscall(16, 13, 48, (uint32_t) " ");
+    syscall(16, 14, 42, (uint32_t) " ");
+    syscall(16, 14, 43, (uint32_t) " ");
+    syscall(16, 14, 44, (uint32_t) " ");
+    syscall(16, 14, 45, (uint32_t) " ");
+    syscall(16, 14, 46, (uint32_t) " ");
+    syscall(16, 14, 47, (uint32_t) " ");
+    syscall(16, 14, 48, (uint32_t) " ");
+
+    // S
+    syscall(16, 6, 54, (uint32_t) " ");
+    syscall(16, 6, 55, (uint32_t) " ");
+    syscall(16, 6, 56, (uint32_t) " ");
+    syscall(16, 6, 57, (uint32_t) " ");
+    syscall(16, 6, 58, (uint32_t) " ");
+    syscall(16, 7, 52, (uint32_t) " ");
+    syscall(16, 7, 53, (uint32_t) " ");
+    syscall(16, 7, 54, (uint32_t) " ");
+    syscall(16, 7, 58, (uint32_t) " ");
+    syscall(16, 7, 59, (uint32_t) " ");
+    syscall(16, 8, 52, (uint32_t) " ");
+    syscall(16, 8, 53, (uint32_t) " ");
+    syscall(16, 8, 58, (uint32_t) " ");
+    syscall(16, 8, 59, (uint32_t) " ");
+    syscall(16, 9, 53, (uint32_t) " ");
+    syscall(16, 10, 54, (uint32_t) " ");
+    syscall(16, 10, 55, (uint32_t) " ");
+    syscall(16, 10, 56, (uint32_t) " ");
+    syscall(16, 11, 57, (uint32_t) " ");
+    syscall(16, 11, 58, (uint32_t) " ");
+    syscall(16, 12, 58, (uint32_t) " ");
+    syscall(16, 13, 58, (uint32_t) " ");
+    syscall(16, 13, 51, (uint32_t) " ");
+    syscall(16, 13, 52, (uint32_t) " ");
+    syscall(16, 14, 53, (uint32_t) " ");
+    syscall(16, 14, 54, (uint32_t) " ");
+    syscall(16, 14, 55, (uint32_t) " ");
+    syscall(16, 14, 56, (uint32_t) " ");
+    syscall(16, 14, 57, (uint32_t) " ");
+
+    for (int i = 0; i < 500000000; i++){}
+    syscall(8, 0, 0, 0);
 }
 
 void print_terminal_text(){
@@ -1114,6 +1377,8 @@ void executeCommand(char* command, uint32_t length){
 }
 
 int main(void) {
+
+    print_jatos();
 
     syscall(7, 0, 0, 0);
 

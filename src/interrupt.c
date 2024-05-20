@@ -193,6 +193,13 @@ void syscall(struct InterruptFrame frame) {
                 *(struct FAT32DriverRequest*) frame.cpu.general.ebx
             );
             break;
+        case 16:
+            // print white block
+            framebuffer_write((uint32_t) frame.cpu.general.ebx, 
+                              (uint32_t) frame.cpu.general.ecx, 
+                              (char) frame.cpu.general.edx,
+                              0xF, 
+                              0xF);
     }
 }
 
