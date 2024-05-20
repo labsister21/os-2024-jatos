@@ -81,6 +81,10 @@ qemu-system-i386 -s -S -drive file=$(DISK_NAME).bin,format=raw,if=ide,index=0,me
 
 ## Screenshots
 
+- Booting Screen
+
+![Kill 0](./other/Screenshot1.jpg)
+
 - Screenshot 1
 
 ![Screenshot 1](./other/Screenshot0.jpg)
@@ -97,9 +101,8 @@ qemu-system-i386 -s -S -drive file=$(DISK_NAME).bin,format=raw,if=ide,index=0,me
 
 ![Screenshot 4](./other/Screenshot5.jpg)
 
-- kill 0
+- Screenshot 5
 
-![Kill 0](./other/Screenshot1.jpg)
-
+![Screenshot 5](./other/Screenshot7.jpg)
 
 
