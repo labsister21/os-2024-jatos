@@ -79,24 +79,27 @@ qemu-system-i386 -s -S -drive file=$(DISK_NAME).bin,format=raw,if=ide,index=0,me
 
 ## Screenshots
 
+## Screenshots
+
 - Screenshot 1
 
-![Project Screenshot](other/screenshot0.jpg)
+![Screenshot 1](./other/Screenshot0.jpg)
 
 - Screenshot 2
 
-![Project Screenshot](other/screenshot3.jpg)
+![Screenshot 2](./other/Screenshot3.jpg)
 
 - Screenshot 3
 
-![Project Screenshot](other/screenshot4.jpg)
+![Screenshot 3](./other/Screenshot4.jpg)
 
 - Screenshot 4
 
-![Project Screenshot](other/screenshot5.jpg)
+![Screenshot 4](./other/Screenshot5.jpg)
 
 - kill 0
 
-![Project Screenshot](other/screenshot1.jpg)
+![Kill 0](./other/Screenshot1.jpg)
+
 
 
