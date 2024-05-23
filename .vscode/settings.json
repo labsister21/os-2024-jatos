@@ -1,3 +1,10 @@
 {
     "debug.onTaskErrors": "debugAnyway",
+    "files.associations": {
+<<<<<<< HEAD
+        "disk.h": "c"
+=======
+        "stddef.h": "c"
+>>>>>>> 4357280c9ad8def8b6570a65534899aaa1361474
+    },
 }
